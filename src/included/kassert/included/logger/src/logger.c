@@ -145,7 +145,7 @@ int log_string (const char* format, ...)
 
 void log_close()
 {
-    if (LogStream && (LogStream != stdout || LogStream != stderr) ) 
+    if (LogStream && LogStream != stdout && LogStream != stderr) 
     {
         fprintf (LogStream, "\n</pre>\n");
         fclose (LogStream);

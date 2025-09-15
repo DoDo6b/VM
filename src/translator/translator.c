@@ -111,9 +111,10 @@ uint64_t translate (const char* input, const char* output)
             
             default:
                 log_string (
-                    "%s:%llu: <b><red>syntax error:<dft> unknown instruction</b>\n",
+                    "%s:%llu: <b><red>syntax error:<dft> unknown instruction (hash: %lu)</b>\n",
                     input,
-                    instructionCounter + 1
+                    instructionCounter + 1,
+                    hash
                 );
                 err |= SYNTAX;
                 return err;

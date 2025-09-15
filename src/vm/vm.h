@@ -14,6 +14,18 @@
 
 #define STACKSIZE 1024
 
+typedef struct
+{
+    StackHandler stack;
+    register_t aax;
+    register_t acx;
+    register_t adx;
+    register_t abx;
+    register_t asp;
+    register_t abp;
+    register_t asi;
+    register_t adi;
+}VM;
 
 uint64_t run (const char* fname);
 

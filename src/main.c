@@ -2,7 +2,7 @@
 #include "vm/vm.h"
 #include "translator/translator.h"
 
-#define LOGFILE "log.html"
+#define LOGFILE "stdout"
 
 int main (int argc, char** argv)
 {
