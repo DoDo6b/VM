@@ -1,13 +1,6 @@
 #include "stack_.h"
 
 
-static inline size_t ceil (size_t a, size_t b)
-{
-    assertStrict (b != 0, "IDIOT division by zero");
-    
-    return (a + b - 1) / b;
-}
-
 T2
 (
 static inline void updateT2Hashes (Stack* dst)
@@ -26,6 +19,9 @@ static void updateMetaInfo (Stack* stack)
 T1( assertStrict (stack->frontCanary == FRONTCANARY && stack->tailCanary == TAILCANARY, "stack signes corrupted"); )
     assertStrict (stack->data && stack->sizeOfElem > 0 && stack->capacity > 0, "struct corrupted");
     
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+
 T1  (
     uintptr_t* frontOffset = (uintptr_t*)stack->data - 1;
               *frontOffset = (uintptr_t) stack->data ^ HEXSPEAK;
@@ -33,6 +29,9 @@ T1  (
     uintptr_t* tailOffset = (uintptr_t*)(stack->data + stack->capacity * stack->sizeOfElem  + (stack->capacity * stack->sizeOfElem % sizeof (uintptr_t)) );
               *tailOffset = (uintptr_t) (stack->data + stack->capacity * stack->sizeOfElem) ^ HEXSPEAK;
     )
+
+#pragma GCC diagnostic pop
+
 T2( updateT2Hashes (stack); )
 
     assertStrict (stackVerifyD (stack) == 0, "verification failed, cant continue");
@@ -47,8 +46,8 @@ Stack* stackInitD (size_t numOfElem, size_t sizeOfElem)
 
     assertStrict (numOfElem > 0 && sizeOfElem > 0, "cant allocate stack with capacity 0 or element size equal 0");
 
-    size_t reservedMemory = 0 T1 ( + ceil (2 * sizeof (uintptr_t), sizeOfElem) + (numOfElem * sizeOfElem % sizeof (uintptr_t)) );
-    dst->data = (char*) calloc (numOfElem + reservedMemory, sizeOfElem) T1 ( + sizeof (uintptr_t));
+    size_t reservedMemory = 0 T1 ( + 2 * sizeof (uintptr_t) + numOfElem * sizeOfElem % sizeof (uintptr_t) );
+    dst->data = (char*) calloc (1, numOfElem * sizeOfElem + reservedMemory) T1 ( + sizeof (uintptr_t));
     assertStrict (dst->data, "calloc returned NUL");
 
     if (dst->data)
@@ -84,11 +83,15 @@ void stackReallocD (Stack* stack, size_t newCapacity, bool ignoreDataLoss)
     assertStrict (newCapacity > stack->capacity || ignoreDataLoss || (stack->top - stack->data) / stack->sizeOfElem < newCapacity, "data loss");
     if (newCapacity < stack->capacity && !ignoreDataLoss && (stack->top - stack->data) / stack->sizeOfElem > newCapacity) return;
 
-    size_t reservedMemory = 0 T1 ( + ceil (2 * sizeof (uintptr_t), stack->sizeOfElem) + ((stack->capacity * stack->sizeOfElem) % sizeof (uintptr_t)) );
+    size_t reservedMemory = 0 T1 ( + 2 * sizeof (uintptr_t) + newCapacity * stack->sizeOfElem % sizeof (uintptr_t) );
 
-    size_t newSize        = (newCapacity + reservedMemory) * stack->sizeOfElem;
+    size_t newSize        = newCapacity * stack->sizeOfElem + reservedMemory;
     size_t topOffset      = stack->top - stack->data;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+
+T1  (
 S1  (
     uintptr_t* frontOffset = (uintptr_t*)stack->data - 1;
               *frontOffset = 0XCCCCCCCCCCCCCCCC;
@@ -96,6 +99,9 @@ S1  (
     uintptr_t* tailOffset = (uintptr_t*)(stack->data + stack->capacity * stack->sizeOfElem  + (stack->capacity * stack->sizeOfElem % sizeof (uintptr_t)) );
               *tailOffset = 0XCCCCCCCCCCCCCCCC;
     )
+    )
+
+#pragma GCC diagnostic pop
 
     char*         newBlock = (char*)realloc (stack->data T1 ( - sizeof (uintptr_t) ), newSize);
     assertStrict (newBlock, "realloc returned NULL");
@@ -307,6 +313,9 @@ T2  (
     }
     )
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
+
 T1  (
     uintptr_t* frontOffset = (uintptr_t*)stack->data - 1;
     uintptr_t* tailOffset = (uintptr_t*)(stack->data + stack->capacity * stack->sizeOfElem + ((stack->capacity * stack->sizeOfElem) % sizeof (uintptr_t)) );
@@ -323,6 +332,8 @@ T1  (
         selfTestingCode |= DATABLOCK_SIGNES_CORRUPTED;
     }
     )
+
+#pragma GCC diagnostic pop
 
 T2  (
     if (stack->crc32Data != crc32Calculate ((const unsigned char*)stack->data, stack->capacity * stack->sizeOfElem))
