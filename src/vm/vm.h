@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "../defines/settings.h"
 #include "../included/logger/logger.h"
 #include "../defines/arch.h"
 #include "../defines/errcodes.h"

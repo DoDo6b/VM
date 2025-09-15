@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include "../defines/settings.h"
 #include "../included/logger/logger.h"
 #include "../included/kassert/kassert.h"
 #include "../included/buffer/buffer.h"

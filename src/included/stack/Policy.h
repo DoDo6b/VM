@@ -1,9 +1,9 @@
 #ifndef POLICY_H
 #define POLICY_H
 
-//#define AREALLOC
+#define AREALLOC
 
-#define TOLERANCEPOLICY_LVL 0
+#define TOLERANCEPOLICY_LVL 9
 #define SECURITY_LVL        9
 #define LOGGINGLVL          9
 

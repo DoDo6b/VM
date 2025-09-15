@@ -43,7 +43,7 @@ unsigned long djb2Hash (const char* hashable, size_t size)
     
     for (; *hashable && size > 0; hashable++, size--)
     {
-        hash = (hash << 5) + hash + *hashable;
+        hash = (hash << 5) + hash + (unsigned char)*hashable;
     }
 
     return hash;
@@ -123,7 +123,11 @@ int log_string (const char* format, ...)
     va_start (args, format);
 
     char Buffer[BUFSIZ] = "";
-    vsprintf (Buffer, format, args);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+    vsnprintf (Buffer, sizeof (Buffer), format, args);
+#pragma GCC diagnostic pop
 
     va_end (args);
 

@@ -4,20 +4,20 @@
 
 #include <stdint.h>
 
-#define RTASM_VER   "A250915"
-#define VALUEPREFIX '#'
+#define RTASM_VER   "A000102"
+#define VALUEFORMAT "#%d"
 
 enum OP_codes
 {
-    PUSH = 0XA0,
-    OUT  = 0XA1,
-    POP  = 0XA2,
-    HALT = 0XAF,
+    PUSH = 0X50,
+    OUT  = 0XF0,
+    POP  = 0X58,
+    HALT = 0XFF,
 
-    ADD  = 0XB0,
-    SUB  = 0XB1,
-    MUL  = 0XB2,
-    DIV  = 0XB3,
+    ADD  = 0XA0,
+    SUB  = 0XA1,
+    MUL  = 0XA2,
+    DIV  = 0XA3,
 };
 
 typedef uint8_t opcode_t;
