@@ -104,6 +104,16 @@ uint64_t translate (const char* input, const char* output)
     bool halt = false;
     while (fscanf (listing, "%s", bufR) > 0 && !halt)
     {
+        if (*bufR == ';')
+        {
+            log_string ("  <ylw>comment detected, skipping<dft>\n");
+
+            fgets (bufR, sizeof (bufR), listing);
+
+            log_string ("  <grn>comment skipped:<dft> %s\n", bufR);
+            continue;
+        }
+
         unsigned long hash = djb2Hash (bufR, sizeof (bufR));
         log_string ("  <ylw>scanned: %s, hashed: %lu<dft>\n", bufR, hash);
 
