@@ -1,11 +1,13 @@
 #include "included/logger/logger.h"
+#include "vm/vm.h"
 #include "translator/translator.h"
 
-#define LOGFILE "stdout"
+#define LOGFILE "log.html"
 
 int main (int argc, char** argv)
 {
     log_start (LOGFILE);
+    log_string ("call: %s %s %s\n", argv[0], argv[1], argv[2]);
 
     if (argc < 3)
     {
@@ -15,12 +17,20 @@ int main (int argc, char** argv)
 
 
     uint64_t errcode = translate (argv[1], argv[2]);
-
     if (errcode)
     {
         log_err ("runtime error", "translation has ended with code %llu", errcode);
         exit (EXIT_FAILURE);
     }
+
+
+    errcode |= run (argv[2]);
+    if (errcode)
+    {
+        log_err ("runtime error", "translation has ended with code %llu", errcode);
+        exit (EXIT_FAILURE);
+    }
+
 
     log_close();
     return 0;

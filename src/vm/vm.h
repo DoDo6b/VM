@@ -13,7 +13,6 @@
 
 
 #define STACKSIZE 1024
-typedef int32_t operand_t;
 
 
 uint64_t run (const char* fname);

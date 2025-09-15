@@ -9,7 +9,7 @@ CFLAGS = -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Wc++14-compat -
          -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,nonnull-attribute,null,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
 BUILD_DIR = src/build
-TARGET = translate
+TARGET = rtasm
 
 SRCS = $(shell find src -name '*.c' \
         ! -path "src/*/included/*" )

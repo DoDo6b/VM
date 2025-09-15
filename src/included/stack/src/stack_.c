@@ -23,7 +23,7 @@ static inline void updateT2Hashes (Stack* dst)
 static void updateMetaInfo (Stack* stack)
 {
     assertStrict (stack, "recived a NULL");
-    assertStrict (stack->frontCanary == FRONTCANARY && stack->tailCanary == TAILCANARY, "stack signes corrupted");
+T1( assertStrict (stack->frontCanary == FRONTCANARY && stack->tailCanary == TAILCANARY, "stack signes corrupted"); )
     assertStrict (stack->data && stack->sizeOfElem > 0 && stack->capacity > 0, "struct corrupted");
     
 T1  (
@@ -136,7 +136,9 @@ void stackPushD (Stack* stack, const void* src)
     assertStrict (stackVerifyD (stack) == 0, "verification failed, cant continue");
     assertStrict (src, "received a NULL");
 
+#ifdef AREALLOC
     if ((size_t)(stack->top - stack->data) >= stack->capacity * stack->sizeOfElem) stackReallocD (stack, stack->capacity * GrowthRate / 100, false);
+#endif
     if ((size_t)(stack->top - stack->data) <  stack->capacity * stack->sizeOfElem)
     {
         memcpy (stack->top, src, stack->sizeOfElem);
@@ -161,7 +163,9 @@ void stackPopD_ (Stack* stack, void* dst /* = NULL */)
 S1(     memset (stack->top, 0XCC, stack->sizeOfElem); )
 T2(     updateT2Hashes (stack); )
 
+#ifdef AREALLOC
         if ((stack->top - stack->data) / stack->sizeOfElem < stack->capacity * ReductionRate / 100) stackReallocD (stack, stack->capacity * ReductionRate / 100, false);
+#endif
 
         assertStrict (stackVerifyD (stack) == 0, "verification failed, cant continue");
     }

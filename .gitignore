@@ -1,5 +1,4 @@
-translate
-vmrun
+rtasm
 *.rtasm
 *.rtout
 

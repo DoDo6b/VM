@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#define RTASM_VER   "A250910"
+#define RTASM_VER   "A250915"
 #define VALUEPREFIX '#'
 
 enum OP_codes
@@ -21,6 +21,7 @@ enum OP_codes
 };
 
 typedef uint8_t opcode_t;
+typedef int32_t operand_t;
 
 
 #endif
