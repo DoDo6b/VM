@@ -80,8 +80,8 @@ void stackReallocD (Stack* stack, size_t newCapacity, bool ignoreDataLoss)
 
     if (stack->capacity == newCapacity) return;
 
-    assertStrict (newCapacity > stack->capacity || ignoreDataLoss || (stack->top - stack->data) / stack->sizeOfElem < newCapacity, "data loss");
-    if (newCapacity < stack->capacity && !ignoreDataLoss && (stack->top - stack->data) / stack->sizeOfElem > newCapacity) return;
+    assertStrict (newCapacity > stack->capacity ||  ignoreDataLoss || (stack->top - stack->data) / stack->sizeOfElem < newCapacity, "data loss");
+    if (          newCapacity < stack->capacity && !ignoreDataLoss && (stack->top - stack->data) / stack->sizeOfElem > newCapacity) return;
 
     size_t reservedMemory = 0 T1 ( + 2 * sizeof (uintptr_t) + newCapacity * stack->sizeOfElem % sizeof (uintptr_t) );
 
