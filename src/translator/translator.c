@@ -10,67 +10,201 @@ static void skipSpaces(FILE* file)
     fseek (file, -1, SEEK_CUR);
 }
 
-static size_t translateOperand (const char* filename, size_t instructionCounter, FILE* listing, Buffer* buf)
+static operand_t translateOperand (const char* filename, size_t instructionCounter, FILE* listing)
 {
-    operand_t operand = 0;
+    assertStrict (filename, "received NULL");
+    assertStrict (listing,  "received NULL");
 
-    skipSpaces (listing);
+    operand_t operand = 0;
 
     if (!fscanf (listing, VALUEFORMAT, &operand))
     {
+        ErrAcc |= SYNTAX;
         log_string (
             "%s:%llu: <b><red>syntax error:<dft> no operand found</b>\n",
             filename,
             instructionCounter + 1
         );
+        log_string (
+            "    | errAcc: %llu\n",
+            ErrAcc
+        );
+        exit (EXIT_FAILURE);
+    }
+    
+    return operand;
+}
+
+#define CASE_REG(reg)  case reg ## _HASH: return reg;
+
+static opcode_t translateReg (const char* filename, size_t instructionCounter, FILE* listing)
+{
+    assertStrict (filename, "received NULL");
+    assertStrict (listing,  "received NULL");
+
+    char reg[4] = {0};
+
+    if (fscanf (listing, REGISTERFORMAT, reg) == 0)
+    {
+        ErrAcc |= SYNTAX;
+        log_string (
+            "%s:%llu: <b><red>syntax error:<dft> no operand found</b>\n",
+            filename,
+            instructionCounter + 1
+        );
+        log_string (
+            "    | errAcc: %llu\n",
+            ErrAcc
+        );
         exit (EXIT_FAILURE);
     }
 
-    bufWrite (buf, &operand, sizeof (operand_t));
-    
-    return 0;
+    unsigned long hash = djb2Hash (reg, sizeof (reg));
+    switch (hash)
+    {
+        CASE_REG (AAX)
+        CASE_REG (ACX)
+        CASE_REG (ADX)
+        CASE_REG (ABX)
+        CASE_REG (ASP)
+        CASE_REG (ABP)
+        CASE_REG (ASI)
+        CASE_REG (ADI)
+
+        default:
+            ErrAcc |= SYNTAX;
+            log_string (
+                "%s:%llu: <b><red>syntax error:<dft> unknown register (hash: %lu)</b>\n",
+                filename,
+                instructionCounter + 1,
+                hash
+            );
+            log_string (
+                "    | errAcc: %llu\n",
+                ErrAcc
+            );
+            exit (EXIT_FAILURE);
+    }
 }
 
+#undef CASE_REG
 
-static void writeOPcode (Buffer* buf, opcode_t opcode)
+
+static uint64_t writeOPcode (Buffer* buf, opcode_t opcode)
 {
-    bufWrite (buf, &opcode, sizeof (opcode_t));
+    if (bufWrite (buf, &opcode, sizeof (opcode_t)) == 0)
+    {
+        ErrAcc |= WRITINGERROR;
+        log_err ("writing error", "cant write into buffer");
+        IMSTP ( exit (EXIT_FAILURE); )
+    }
+    return ErrAcc;
 }
 
 static uint64_t writePush (const char* filename, size_t instructionCounter, Buffer* buf, FILE* listing)
 {
-    writeOPcode (buf, PUSH);
+    assertStrict (filename, "received NULL");
+    assertStrict (listing,  "received NULL");
+    assertStrict (buf,      "received NULL");
 
-    uint64_t err = translateOperand (filename, instructionCounter, listing, buf);
+    opcode_t  opcode  = PUSH << OPCODESHIFT;
+    operand_t operand = 0;
+    opcode_t  reg = 0;
 
-    return err;
+    skipSpaces (listing);
+
+    char prefix = fgetc (listing);
+    switch (prefix)
+    {
+    case VALUEPREFIX:
+        writeOPcode (buf, opcode);
+
+        operand = translateOperand (filename, instructionCounter, listing);
+        if (bufWrite (buf, &operand, sizeof (operand_t)) == 0)
+        {
+            ErrAcc |= WRITINGERROR;
+            log_err ("writing error", "cant write into buffer");
+            IMSTP ( exit (EXIT_FAILURE); )
+        }
+        break;
+
+    case REGISTERPREFIX:
+        opcode += translateReg (filename, instructionCounter, listing);
+        writeOPcode (buf, opcode);
+        break;
+    
+    default:
+        ErrAcc |= SYNTAX;
+        log_string (
+            "%s:%llu: <b><red>syntax error:<dft> unknown operand type (%c)</b>\n",
+            filename,
+            instructionCounter + 1,
+            prefix
+        );
+        log_string (
+            "    | errAcc: %llu\n",
+            ErrAcc
+        );
+        exit (EXIT_FAILURE);
+    }
+
+    return ErrAcc;
+}
+
+static uint64_t writeMov (const char* filename, size_t instructionCounter, Buffer* buf, FILE* listing)
+{
+    assertStrict (filename, "received NULL");
+    assertStrict (listing,  "received NULL");
+    assertStrict (buf,      "received NULL");
+
+    opcode_t opcode = MOV << OPCODESHIFT;
+
+    skipSpaces (listing);
+
+    if (fgetc (listing) != REGISTERPREFIX)
+    {
+        ErrAcc |= SYNTAX;
+        log_string (
+            "%s:%llu: <b><red>syntax error:<dft> MOV requires correct register</b>\n",
+            filename,
+            instructionCounter + 1
+        );
+        log_string (
+            "    | errAcc: %llu\n",
+            ErrAcc
+        );
+        exit (EXIT_FAILURE);
+    }
+
+    opcode += translateReg (filename, instructionCounter, listing);
+
+    writeOPcode (buf, opcode);
+
+    return ErrAcc;
 }
 
 
-#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (&bufW, opcode); break;
+#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (&bufW, opcode << OPCODESHIFT); break;
 
 uint64_t translate (const char* input, const char* output)
 {
-
     assertStrict (input,  "received NULL");
     assertStrict (output, "received NULL");
-
-    uint64_t err = 0;
 
     FILE* listing = fopen (input, "r");
     if (!listing)
     {
-        err |= CANTOPEN;
+        ErrAcc |= CANTOPEN;
         log_err ("fopen error", "cant open input file: %s", input);
-        return err;
+        return ErrAcc;
     }
 
     FILE* bin = fopen (output, "wb+");
     if (!bin)
     {
-        err |= CANTOPEN;
+        ErrAcc |= CANTOPEN;
         log_err ("fopen error", "cant open output file: %s", input);
-        return err;
+        return ErrAcc;
     }
 
     fwrite (RTASM_VER, sizeof (RTASM_VER), 1, bin);
@@ -102,22 +236,28 @@ uint64_t translate (const char* input, const char* output)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
 
-            case PUSH_HASH: err |= writePush (input, instructionCounter, &bufW, listing); break;
+            case MOV_HASH:  writeMov  (input, instructionCounter, &bufW, listing); break;
+
+            case PUSH_HASH: writePush (input, instructionCounter, &bufW, listing); break;
             
             case HALT_HASH:
-                writeOPcode (&bufW, HALT);
+                writeOPcode (&bufW, HALT << OPCODESHIFT);
                 halt = true;
                 break;
             
             default:
+                ErrAcc |= SYNTAX;
                 log_string (
                     "%s:%llu: <b><red>syntax error:<dft> unknown instruction (hash: %lu)</b>\n",
                     input,
                     instructionCounter + 1,
                     hash
                 );
-                err |= SYNTAX;
-                return err;
+                log_string (
+                    "    | errAcc: %llu\n",
+                    ErrAcc
+                );
+                return ErrAcc;
         }
         instructionCounter++;
     }
@@ -129,7 +269,7 @@ uint64_t translate (const char* input, const char* output)
     bufFree (&bufW);
     fclose (bin);
 
-    return err;
+    return ErrAcc;
 }
 
 #undef CASE_SIMPLEINSTRUCTION

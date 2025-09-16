@@ -18,6 +18,8 @@
 
 #define NAME_MAX 255
 
+extern uint64_t ErrAcc;
+
 FILE* log_start (const char* fname);
 
 int log_string (const char* format, ...);
@@ -44,7 +46,12 @@ const char* get_log();
         __LINE__,\
         __func__,\
         ##__VA_ARGS__\
-    )
+    );\
+    log_string \
+    (\
+        "    | errAcc: %llu\n",\
+        ErrAcc\
+    )\
 
 
 void memDump (const void* pointer, size_t byteSize);

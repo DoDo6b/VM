@@ -16,18 +16,21 @@ int main (int argc, char** argv)
     }
 
 
-    uint64_t errcode = translate (argv[1], argv[2]);
-    if (errcode)
+    if (*argv[1] != '-')
     {
-        log_err ("runtime error", "translation has ended with code %llu", errcode);
-        exit (EXIT_FAILURE);
+        ErrAcc |= translate (argv[1], argv[2]);
+        if (ErrAcc)
+        {
+            log_err ("runtime error", "translation has ended with code %llu", ErrAcc);
+            exit (EXIT_FAILURE);
+        }
     }
 
 
-    errcode |= run (argv[2]);
-    if (errcode)
+    ErrAcc |= run (argv[2]);
+    if (ErrAcc)
     {
-        log_err ("runtime error", "translation has ended with code %llu", errcode);
+        log_err ("runtime error", "execution has ended with code %llu", ErrAcc);
         exit (EXIT_FAILURE);
     }
 

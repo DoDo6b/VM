@@ -10,6 +10,8 @@ typedef enum
     WRONGVERSION        = 8,
     OPCODENOTFOUND      = 16,
     MISSINGOPERAND      = 32,
+    WRITINGERROR        = 64,
+    BYTECODECORRUPTED   = 128,
 }EC;
 
 

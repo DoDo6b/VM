@@ -1,19 +1,73 @@
 #include "vm.h"
 
 
-static uint64_t push (FILE* src, StackHandler stack)
+static uint64_t push (opcode_t opcode, FILE* src, const VM* vm)
 {
-    uint64_t err = 0;
-
-    assertStrict (src,   "received NULL");
-    assertStrict (stackVerify (stack) == 0, "received NULL");
+    assertStrict (src,                          "received NULL");
+    assertStrict (vm,                           "received NULL");
+    assertStrict (stackVerify (vm->stack) == 0, "received NULL");
 
     operand_t operand = 0;
-    fread (&operand, sizeof (operand_t), 1, src);
+    opcode_t reg = opcode & UINT8_MAX;
 
-    stackPush (stack, &operand);
+    if (reg)
+    {
+        switch (reg)
+        {
+            case AAX: operand = vm->aax; break;
+            case ACX: operand = vm->acx; break;
+            case ADX: operand = vm->adx; break;
+            case ABX: operand = vm->abx; break;
+            case ASP: operand = vm->asp; break;
+            case ABP: operand = vm->abp; break;
+            case ASI: operand = vm->asi; break;
+            case ADI: operand = vm->adi; break;
 
-    return err;
+            default:
+                ErrAcc |= BYTECODECORRUPTED;
+                log_err ("translation error", "bytecode corrupted");
+                exit (EXIT_FAILURE);
+        }
+    }
+    else fread (&operand, sizeof (operand_t), 1, src);
+
+    stackPush (vm->stack, &operand);
+
+    return ErrAcc;
+}
+
+static uint64_t mov (opcode_t opcode, VM* vm)
+{
+    assertStrict (vm,                           "received NULL");
+    assertStrict (stackVerify (vm->stack) == 0, "received NULL");
+
+    opcode_t reg = opcode & UINT8_MAX;
+
+    if (reg == 0)
+    {
+        ErrAcc |= BYTECODECORRUPTED;
+        log_err ("translation error", "bytecode corrupted");
+        exit (EXIT_FAILURE);
+    }
+
+    switch (reg)
+    {
+        case AAX: stackPop (vm->stack, &vm->aax); break;
+        case ACX: stackPop (vm->stack, &vm->acx); break;
+        case ADX: stackPop (vm->stack, &vm->adx); break;
+        case ABX: stackPop (vm->stack, &vm->abx); break;
+        case ASP: stackPop (vm->stack, &vm->asp); break;
+        case ABP: stackPop (vm->stack, &vm->abp); break;
+        case ASI: stackPop (vm->stack, &vm->asi); break;
+        case ADI: stackPop (vm->stack, &vm->adi); break;
+
+        default:
+            ErrAcc |= BYTECODECORRUPTED;
+            log_err ("translation error", "bytecode corrupted");
+            exit (EXIT_FAILURE);
+    }
+
+    return ErrAcc;
 }
 
 static void out (StackHandler stack)
@@ -158,7 +212,8 @@ uint64_t run (const char* input)
     log_string ("<grn>%llu opcode(s) will be executed<dft>\n", instructionCounter );
     fseek (src, sizeof (RTASM_VER), SEEK_SET);
 
-    StackHandler stack = stackInit (STACKSIZE, sizeof (operand_t));
+    VM vm = {0};
+    vm.stack = stackInit (STACKSIZE, sizeof (operand_t));
 
     opcode_t opcode = 0;
 
@@ -166,16 +221,17 @@ uint64_t run (const char* input)
     {
         fread (&opcode, sizeof (opcode), 1, src);
 
-        switch (opcode)
+        switch (opcode >> OPCODESHIFT)
         {
-            case OUT: out (stack); break;
-            case POP: pop (stack); break;
-            case ADD: add (stack); break;
-            case SUB: sub (stack); break;
-            case MUL: mul (stack); break;
-            case DIV: div (stack); break;
+            case OUT: out (vm.stack); break;
+            case POP: pop (vm.stack); break;
+            case ADD: add (vm.stack); break;
+            case SUB: sub (vm.stack); break;
+            case MUL: mul (vm.stack); break;
+            case DIV: div (vm.stack); break;
 
-            case PUSH: push (src, stack); break;
+            case PUSH: push (opcode, src, &vm); break;
+            case MOV:  mov  (opcode,      &vm); break;
 
             case HALT: i = instructionCounter; break;
 
@@ -192,7 +248,7 @@ uint64_t run (const char* input)
     
     log_string ("<grn>Work is done<dft>\n");
 
-    stackFree (stack);
+    stackFree (vm.stack);
     fclose (src);
 
     return err;
