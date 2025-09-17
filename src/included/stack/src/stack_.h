@@ -53,7 +53,7 @@ size_t stackLenD (const Stack* stack);
 void    stackDumpD_ (const char* name, const Stack* stack, void (*print)(const void* obj));
 #define stackDumpD(stack) stackDumpD_ (#stack, stack, NULL)
 
-uint64_t stackVerifyD_ (const char* callerFile, unsigned int callerLine, const Stack* stack);
+Erracc_t stackVerifyD_ (const char* callerFile, unsigned int callerLine, const Stack* stack);
 #define  stackVerifyD(stack) stackVerifyD_ (__FILE__, __LINE__, stack)
 
 

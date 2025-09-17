@@ -4,7 +4,7 @@
 static char LogFile[NAME_MAX] = "";
 static FILE* LogStream = NULL;
 
-uint64_t ErrAcc = 0;
+Erracc_t ErrAcc = 0;
 
 FILE* log_start (const char* fname)
 {

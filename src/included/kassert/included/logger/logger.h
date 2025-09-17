@@ -18,7 +18,9 @@
 
 #define NAME_MAX 255
 
-extern uint64_t ErrAcc;
+typedef uint64_t Erracc_t;
+
+extern Erracc_t ErrAcc;
 
 FILE* log_start (const char* fname);
 

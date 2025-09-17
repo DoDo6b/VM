@@ -1,7 +1,7 @@
 #include "vm.h"
 
 
-static uint64_t push (opcode_t opcode, FILE* src, const VM* vm)
+static Erracc_t push (opcode_t opcode, FILE* src, const VM* vm)
 {
     assertStrict (src,                          "received NULL");
     assertStrict (vm,                           "received NULL");
@@ -12,31 +12,23 @@ static uint64_t push (opcode_t opcode, FILE* src, const VM* vm)
 
     if (reg)
     {
-        switch (reg)
+        if (reg <= NUM_REGS) operand = vm->regs[reg];
+        else
         {
-            case AAX: operand = vm->aax; break;
-            case ACX: operand = vm->acx; break;
-            case ADX: operand = vm->adx; break;
-            case ABX: operand = vm->abx; break;
-            case ASP: operand = vm->asp; break;
-            case ABP: operand = vm->abp; break;
-            case ASI: operand = vm->asi; break;
-            case ADI: operand = vm->adi; break;
-
-            default:
-                ErrAcc |= BYTECODECORRUPTED;
-                log_err ("translation error", "bytecode corrupted");
-                exit (EXIT_FAILURE);
+            ErrAcc |= BYTECODECORRUPTED;
+            log_err ("translation error", "bytecode corrupted");
+            return ErrAcc;
         }
     }
     else fread (&operand, sizeof (operand_t), 1, src);
 
+    
     stackPush (vm->stack, &operand);
 
     return ErrAcc;
 }
 
-static uint64_t mov (opcode_t opcode, VM* vm)
+static Erracc_t mov (opcode_t opcode, VM* vm)
 {
     assertStrict (vm,                           "received NULL");
     assertStrict (stackVerify (vm->stack) == 0, "received NULL");
@@ -50,159 +42,140 @@ static uint64_t mov (opcode_t opcode, VM* vm)
         exit (EXIT_FAILURE);
     }
 
-    switch (reg)
+    if (reg <= NUM_REGS) stackPop (vm->stack, &vm->regs[reg]);
+    else
     {
-        case AAX: stackPop (vm->stack, &vm->aax); break;
-        case ACX: stackPop (vm->stack, &vm->acx); break;
-        case ADX: stackPop (vm->stack, &vm->adx); break;
-        case ABX: stackPop (vm->stack, &vm->abx); break;
-        case ASP: stackPop (vm->stack, &vm->asp); break;
-        case ABP: stackPop (vm->stack, &vm->abp); break;
-        case ASI: stackPop (vm->stack, &vm->asi); break;
-        case ADI: stackPop (vm->stack, &vm->adi); break;
-
-        default:
-            ErrAcc |= BYTECODECORRUPTED;
-            log_err ("translation error", "bytecode corrupted");
-            exit (EXIT_FAILURE);
+        ErrAcc |= BYTECODECORRUPTED;
+        log_err ("translation error", "bytecode corrupted");
+        return ErrAcc;
     }
 
     return ErrAcc;
 }
 
-static void out (StackHandler stack)
+static void out (const VM* vm)
 {
-    assertStrict (stackVerify (stack) == 0, "received NULL");
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
     operand_t valOnTop = 0;
-    stackTop (stack, &valOnTop);
+    stackTop (vm->stack, &valOnTop);
  
     printf ("%d\n", valOnTop);
 }
 
-static void pop (StackHandler stack)
+static void pop (VM* vm)
 {
-    assertStrict (stackVerify (stack) == 0, "received NULL");
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    stackPop (stack, NULL);
+    stackPop (vm->stack, NULL);
 }
 
-static uint64_t add (StackHandler stack)
+static uint64_t add (VM* vm)
 {
-    uint64_t err = 0;
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    assertStrict (stackVerify (stack) == 0, "received NULL");
-
-    if (stackLen (stack) < 2)
+    if (stackLen (vm->stack) < 2)
     {
-        err |= MISSINGOPERAND;
+        ErrAcc |= MISSINGOPERAND;
         log_err ("runtime error", "missing operand");
-        return err;
+        return ErrAcc;
     }
     operand_t operand1 = 0;
     operand_t operand2 = 0;
-    stackPop (stack, &operand1);
-    stackPop (stack, &operand2);
+    stackPop (vm->stack, &operand1);
+    stackPop (vm->stack, &operand2);
 
     operand2 += operand1;
     
-    stackPush (stack, &operand2);
+    stackPush (vm->stack, &operand2);
 
-    return err;
+    return ErrAcc;
 }
 
-static uint64_t sub (StackHandler stack)
+static uint64_t sub (VM* vm)
 {
-    uint64_t err = 0;
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    assertStrict (stackVerify (stack) == 0, "received NULL");
-
-    if (stackLen (stack) < 2)
+    if (stackLen (vm->stack) < 2)
     {
-        err |= MISSINGOPERAND;
+        ErrAcc |= MISSINGOPERAND;
         log_err ("runtime error", "missing operand");
-        return err;
+        return ErrAcc;
     }
     operand_t operand1 = 0;
     operand_t operand2 = 0;
-    stackPop (stack, &operand1);
-    stackPop (stack, &operand2);
+    stackPop (vm->stack, &operand1);
+    stackPop (vm->stack, &operand2);
 
     operand2 -= operand1;
     
-    stackPush (stack, &operand2);
+    stackPush (vm->stack, &operand2);
 
-    return err;
+    return ErrAcc;
 }
 
-static uint64_t mul (StackHandler stack)
+static uint64_t mul (VM* vm)
 {
-    uint64_t err = 0;
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    assertStrict (stackVerify (stack) == 0, "received NULL");
-
-    if (stackLen (stack) < 2)
+    if (stackLen (vm->stack) < 2)
     {
-        err |= MISSINGOPERAND;
+        ErrAcc |= MISSINGOPERAND;
         log_err ("runtime error", "missing operand");
-        return err;
+        return ErrAcc;
     }
     operand_t operand1 = 0;
     operand_t operand2 = 0;
-    stackPop (stack, &operand1);
-    stackPop (stack, &operand2);
+    stackPop (vm->stack, &operand1);
+    stackPop (vm->stack, &operand2);
 
     operand2 *= operand1;
     
-    stackPush (stack, &operand2);
+    stackPush (vm->stack, &operand2);
 
-    return err;
+    return ErrAcc;
 }
 
-static uint64_t div (StackHandler stack)
+static uint64_t div (VM* vm)    //проверка на 0, надо бы добавить указатель на пользовательскую функцию обработчика
 {
-    uint64_t err = 0;
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    assertStrict (stackVerify (stack) == 0, "received NULL");
-
-    if (stackLen (stack) < 2)
+    if (stackLen (vm->stack) < 2)
     {
-        err |= MISSINGOPERAND;
+        ErrAcc |= MISSINGOPERAND;
         log_err ("runtime error", "missing operand");
-        return err;
+        return ErrAcc;
     }
     operand_t operand1 = 0;
     operand_t operand2 = 0;
-    stackPop (stack, &operand1);
-    stackPop (stack, &operand2);
+    stackPop (vm->stack, &operand1);
+    stackPop (vm->stack, &operand2);
 
     operand2 /= operand1;
     
-    stackPush (stack, &operand2);
+    stackPush (vm->stack, &operand2);
 
-    return err;
+    return ErrAcc;
 }
 
-uint64_t run (const char* input)
+Erracc_t run (const char* input)
 {
-    uint64_t err = 0;
-
     FILE* src = fopen (input, "rb");
     if (!src)
     {
-        err |= CANTOPEN;
+        ErrAcc |= CANTOPEN;
         log_err ("fopen error", "cant open input file: %s", input);
-        return err; 
+        return ErrAcc; 
     }
 
-    char   version[BUFSIZ];
+    char   version[BUFSIZ] = {0};
     fread (version, sizeof (RTASM_VER), 1, src);
 
     if (memcmp (RTASM_VER, version, sizeof (RTASM_VER)) != 0)
     {
-        err |= WRONGVERSION;
+        ErrAcc |= WRONGVERSION;
         log_err ("error", "incompatible version of rtasm");
-        return err;
+        return ErrAcc;
     }
     log_string ("<grn>version is compatible<dft>\n", input );
 
@@ -212,8 +185,7 @@ uint64_t run (const char* input)
     log_string ("<grn>%llu opcode(s) will be executed<dft>\n", instructionCounter );
     fseek (src, sizeof (RTASM_VER), SEEK_SET);
 
-    VM vm = {0};
-    vm.stack = stackInit (STACKSIZE, sizeof (operand_t));
+    VM* vm = VMInit (STACKSIZE);
 
     opcode_t opcode = 0;
 
@@ -223,15 +195,15 @@ uint64_t run (const char* input)
 
         switch (opcode >> OPCODESHIFT)
         {
-            case OUT: out (vm.stack); break;
-            case POP: pop (vm.stack); break;
-            case ADD: add (vm.stack); break;
-            case SUB: sub (vm.stack); break;
-            case MUL: mul (vm.stack); break;
-            case DIV: div (vm.stack); break;
+            case OUT: out (vm); break;
+            case POP: pop (vm); break;
+            case ADD: add (vm); break;
+            case SUB: sub (vm); break;
+            case MUL: mul (vm); break;
+            case DIV: div (vm); break;
 
-            case PUSH: push (opcode, src, &vm); break;
-            case MOV:  mov  (opcode,      &vm); break;
+            case PUSH: push (opcode, src, vm); break;
+            case MOV:  mov  (opcode,      vm); break;
 
             case HALT: i = instructionCounter; break;
 
@@ -241,15 +213,15 @@ uint64_t run (const char* input)
                     input,
                     instructionCounter + 1
                 );
-                err |= SYNTAX;
-                return err;
+                ErrAcc |= SYNTAX;
+                return ErrAcc;
         }
     }
     
     log_string ("<grn>Work is done<dft>\n");
 
-    stackFree (vm.stack);
+    VMFree (vm);
     fclose (src);
 
-    return err;
+    return ErrAcc;
 }

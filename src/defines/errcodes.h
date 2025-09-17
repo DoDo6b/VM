@@ -9,9 +9,12 @@ typedef enum
     SYNTAX              = 4,
     WRONGVERSION        = 8,
     OPCODENOTFOUND      = 16,
-    MISSINGOPERAND      = 32,
-    WRITINGERROR        = 64,
-    BYTECODECORRUPTED   = 128,
+    WRITINGERROR        = 32,
+    VMINITIALIZATION    = 64,
+    STACKVERIFICATION   = 128,
+    VMSELFTESTING       = 256,
+    MISSINGOPERAND      = 512,
+    BYTECODECORRUPTED   = 1024,
 }EC;
 
 

@@ -4,7 +4,8 @@
 
 #include <stdint.h>
 
-#define RTASM_VER   "A000102"
+#define RTASM_SIGN  "RTRTASM"
+#define RTASM_VER   "A000201"
 
 #define VALUEPREFIX    '#'
 #define VALUEFORMAT    "%d"
@@ -38,7 +39,8 @@ enum Registers
     ADI = 8,
 };
 
-#define OPCODESHIFT 8
+#define NUM_REGS 8
+#define OPCODESHIFT (sizeof (opcode_t) - 1) * 8
 
 typedef uint16_t opcode_t;
 typedef int32_t  operand_t;

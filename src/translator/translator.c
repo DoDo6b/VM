@@ -109,11 +109,10 @@ static uint64_t writePush (const char* filename, size_t instructionCounter, Buff
 
     opcode_t  opcode  = PUSH << OPCODESHIFT;
     operand_t operand = 0;
-    opcode_t  reg = 0;
 
     skipSpaces (listing);
 
-    char prefix = fgetc (listing);
+    int     prefix = fgetc (listing);
     switch (prefix)
     {
     case VALUEPREFIX:
@@ -184,7 +183,7 @@ static uint64_t writeMov (const char* filename, size_t instructionCounter, Buffe
 }
 
 
-#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (&bufW, opcode << OPCODESHIFT); break;
+#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode << OPCODESHIFT); break;
 
 uint64_t translate (const char* input, const char* output)
 {
@@ -212,9 +211,8 @@ uint64_t translate (const char* input, const char* output)
     size_t instructionCounter =  0;
 
     char           bufR[BUFFERSIZE] = {0};
-    Buffer         bufW = {0};
-    bufInit      (&bufW, BUFFERSIZE);
-    bufSetStream (&bufW, bin);
+    Buffer*        bufW = bufInit (BUFFERSIZE);
+    bufSetStream (bufW, bin, 'w');
 
     bool halt = false;
     while (fscanf (listing, "%s", bufR) > 0 && !halt)
@@ -236,12 +234,12 @@ uint64_t translate (const char* input, const char* output)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
 
-            case MOV_HASH:  writeMov  (input, instructionCounter, &bufW, listing); break;
+            case MOV_HASH:  writeMov  (input, instructionCounter, bufW, listing); break;
 
-            case PUSH_HASH: writePush (input, instructionCounter, &bufW, listing); break;
+            case PUSH_HASH: writePush (input, instructionCounter, bufW, listing); break;
             
             case HALT_HASH:
-                writeOPcode (&bufW, HALT << OPCODESHIFT);
+                writeOPcode (bufW, HALT << OPCODESHIFT);
                 halt = true;
                 break;
             
@@ -263,10 +261,10 @@ uint64_t translate (const char* input, const char* output)
     }
 
     log_string ("<grn>translated %llu opcode(s)<dft>\n", instructionCounter);
-    bufWrite (&bufW, &instructionCounter, sizeof (size_t));
+    bufWrite (bufW, &instructionCounter, sizeof (size_t));
 
     fclose (listing);
-    bufFree (&bufW);
+    bufFree (bufW);
     fclose (bin);
 
     return ErrAcc;
