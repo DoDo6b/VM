@@ -158,38 +158,60 @@ static uint64_t div (VM* vm)    //проверка на 0, надо бы доб�
     return ErrAcc;
 }
 
-Erracc_t run (const char* input)
+
+static FILE* fileOpen (const char* fname, const char* attributes)
 {
-    FILE* src = fopen (input, "rb");
-    if (!src)
+    assertStrict (fname,      "received NULL");
+    assertStrict (attributes, "received NULL");
+
+    FILE* stream = fopen (fname, attributes);
+
+    if (!stream)
     {
         ErrAcc |= CANTOPEN;
-        log_err ("fopen error", "cant open input file: %s", input);
-        return ErrAcc; 
+        log_err ("fopen error", "cant open input file: \"%s\"", stream);
+        return NULL;
     }
 
-    char   version[BUFSIZ] = {0};
-    fread (version, sizeof (RTASM_VER), 1, src);
+    return stream;
+}
 
-    if (memcmp (RTASM_VER, version, sizeof (RTASM_VER)) != 0)
+static Erracc_t headerCmp (const Header* header)
+{
+    assertStrict (header, "received NULL");
+
+    if (header->sign    != RTASM_SIGN)
+    {
+        ErrAcc |= BYTECODECORRUPTED;
+        log_err ("error", "bytecode corrupted");
+    }
+    if (header->version != RTASM_VER)
     {
         ErrAcc |= WRONGVERSION;
         log_err ("error", "incompatible version of rtasm");
-        return ErrAcc;
     }
+    return ErrAcc;
+}
+
+
+Erracc_t run (const char* input)
+{
+    FILE* src = fileOpen (input, "rb");
+
+    Header header = {0};
+    fread (&header, sizeof (Header), 1, src);
+
+    headerCmp (&header);
+    if (ErrAcc) return ErrAcc;
     log_string ("<grn>version is compatible<dft>\n", input );
 
-    size_t instructionCounter = 0;
-    fseek (src, -(long)sizeof (size_t), SEEK_END);
-    fread (&instructionCounter, sizeof (size_t), 1, src);
-    log_string ("<grn>%llu opcode(s) will be executed<dft>\n", instructionCounter );
-    fseek (src, sizeof (RTASM_VER), SEEK_SET);
+    log_string ("<grn>%llu opcode(s) will be executed<dft>\n", header.instrc);
 
     VM* vm = VMInit (STACKSIZE);
 
     opcode_t opcode = 0;
 
-    for (size_t i = 0; i < instructionCounter; i++)
+    for (size_t i = 0; i < header.instrc; i++)
     {
         fread (&opcode, sizeof (opcode), 1, src);
 
@@ -205,13 +227,14 @@ Erracc_t run (const char* input)
             case PUSH: push (opcode, src, vm); break;
             case MOV:  mov  (opcode,      vm); break;
 
-            case HALT: i = instructionCounter; break;
+            case HALT: i = header.instrc; break;
 
             default:
                 log_string (
-                    "%s:%llu: <b><red>syntax error:<dft> unknown instruction</b>\n",
+                    "%s:%llu: <b><red>syntax error:<dft> unknown instruction: \"%0X\"</b>\n",
                     input,
-                    instructionCounter + 1
+                    header.instrc + 1,
+                    opcode >> OPCODESHIFT
                 );
                 ErrAcc |= SYNTAX;
                 return ErrAcc;

@@ -10,6 +10,7 @@ static void skipSpaces(FILE* file)
     fseek (file, -1, SEEK_CUR);
 }
 
+
 static operand_t translateOperand (const char* filename, size_t instructionCounter, FILE* listing)
 {
     assertStrict (filename, "received NULL");
@@ -183,6 +184,23 @@ static uint64_t writeMov (const char* filename, size_t instructionCounter, Buffe
 }
 
 
+static FILE* fileOpen (const char* fname, const char* attributes)
+{
+    assertStrict (fname,      "received NULL");
+    assertStrict (attributes, "received NULL");
+
+    FILE* stream = fopen (fname, attributes);
+
+    if (!stream)
+    {
+        ErrAcc |= CANTOPEN;
+        log_err ("fopen error", "cant open input file: %s", stream);
+        return NULL;
+    }
+
+    return stream;
+}
+
 #define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode << OPCODESHIFT); break;
 
 uint64_t translate (const char* input, const char* output)
@@ -190,29 +208,24 @@ uint64_t translate (const char* input, const char* output)
     assertStrict (input,  "received NULL");
     assertStrict (output, "received NULL");
 
-    FILE* listing = fopen (input, "r");
-    if (!listing)
-    {
-        ErrAcc |= CANTOPEN;
-        log_err ("fopen error", "cant open input file: %s", input);
-        return ErrAcc;
-    }
+    FILE* listing = fileOpen (input, "r");
+    FILE* bin     = fileOpen (output, "wb+");
 
-    FILE* bin = fopen (output, "wb+");
-    if (!bin)
-    {
-        ErrAcc |= CANTOPEN;
-        log_err ("fopen error", "cant open output file: %s", input);
-        return ErrAcc;
-    }
-
-    fwrite (RTASM_VER, sizeof (RTASM_VER), 1, bin);
-
-    size_t instructionCounter =  0;
-
+    //Buffer*        bufR = bufInit (fileSize (listing));
     char           bufR[BUFFERSIZE] = {0};
     Buffer*        bufW = bufInit (BUFFERSIZE);
-    bufSetStream (bufW, bin, 'w');
+    //bufSetStream (bufR, listing, 'r');
+    bufSetStream (bufW, bin,     'w');
+
+    //bufRead (bufR, 0);
+
+    fseek (bin, sizeof (Header), SEEK_SET);
+
+    Header header = {
+        .sign =    RTASM_SIGN,
+        .version = RTASM_VER,
+        .instrc = 0,
+    };
 
     bool halt = false;
     while (fscanf (listing, "%s", bufR) > 0 && !halt)
@@ -234,9 +247,9 @@ uint64_t translate (const char* input, const char* output)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
 
-            case MOV_HASH:  writeMov  (input, instructionCounter, bufW, listing); break;
+            case MOV_HASH:  writeMov  (input, header.instrc, bufW, listing); break;
 
-            case PUSH_HASH: writePush (input, instructionCounter, bufW, listing); break;
+            case PUSH_HASH: writePush (input, header.instrc, bufW, listing); break;
             
             case HALT_HASH:
                 writeOPcode (bufW, HALT << OPCODESHIFT);
@@ -248,7 +261,7 @@ uint64_t translate (const char* input, const char* output)
                 log_string (
                     "%s:%llu: <b><red>syntax error:<dft> unknown instruction (hash: %lu)</b>\n",
                     input,
-                    instructionCounter + 1,
+                    header.instrc + 1,
                     hash
                 );
                 log_string (
@@ -257,14 +270,16 @@ uint64_t translate (const char* input, const char* output)
                 );
                 return ErrAcc;
         }
-        instructionCounter++;
+        header.instrc++;
     }
 
-    log_string ("<grn>translated %llu opcode(s)<dft>\n", instructionCounter);
-    bufWrite (bufW, &instructionCounter, sizeof (size_t));
+    log_string ("<grn>translated %llu opcode(s)<dft>\n", header.instrc);
 
-    fclose (listing);
     bufFree (bufW);
+    fseek  (bin, 0, SEEK_SET);
+    fwrite (&header, sizeof (Header), 1, bin);
+    
+    fclose (listing);
     fclose (bin);
 
     return ErrAcc;

@@ -6,7 +6,7 @@ Buffer* bufInit (size_t size)
 
     Buffer* buf = (Buffer*)calloc(1, sizeof (Buffer));
 
-    void* ptr = calloc (sizeof (char), size);
+    void* ptr = calloc (size, sizeof (char));
     if (!ptr)
     {
         log_err ("internal error", "calloc returned NULL");
@@ -15,6 +15,7 @@ Buffer* bufInit (size_t size)
 
     buf->mode = 0;
     buf->buffer = (char*)ptr;
+    buf->bufpos = buf->buffer;
     buf->len = 0;
     buf->size = size;
     buf->stream = NULL;
@@ -33,6 +34,11 @@ int bufSetStream (Buffer* buf, FILE* stream, char mode)
     }
 
     buf->stream = stream;
+    buf->bufpos = buf->buffer;
+    
+    #ifdef SECURE
+    memset (buf->buffer, 0, buf->size);
+    #endif
     
     if (mode == 'w' || mode == 'r') buf->mode = mode;
     else
@@ -60,30 +66,79 @@ void bufFree (Buffer* buf)
 
 size_t bufFlush (Buffer* buf)
 {
-    assertStrict (buf->stream, "stream to flush buffer wasnt opened");
+    assertStrict (buf, "received NULL");
+    assertStrict (buf->stream, "stream to flush buffer wasnt opened or wasnt linked");
 
-    size_t wrote = fwrite (buf->buffer, buf->len, 1, buf->stream);
-
-    if (wrote > 0)
+    switch (buf->mode)
     {
-        #ifdef SECURE
-        memset (buf->buffer, 0, buf->size);
-        #endif
+        case 'w':
+            fwrite (buf->buffer, buf->len, 1, buf->stream);
 
-        buf->len = 0;
+            #ifdef SECURE
+            memset (buf->buffer, 0, buf->size);
+            #endif
+            break;
+
+        case 'r':
+            #ifdef SECURE
+            memset (buf->buffer, 0, buf->size);
+            #endif
+
+            break;
+
+        default: return 0;
     }
 
-    return wrote;
+    size_t flushed = buf->len;
+    buf->len = 0;
+    buf->bufpos = buf->buffer;
+
+    return flushed;
+}
+
+
+size_t bufRead (Buffer* buf, size_t size)
+{
+    assertStrict (buf, "received NULL");
+
+    assertStrict (buf->mode == 'r', "wrong buffer mode");
+    assertStrict (buf->stream, "stream wasnt opened or wasnt linked");
+
+    buf->bufpos = buf->buffer + buf->len;       // логично ли? хз, как будто не всегда стоит переносить указатель на начало новопрочитанного
+
+    if (size != 0)
+    {
+        long chRemains = ftell (buf->stream);
+        chRemains = fileSize (buf->stream) - chRemains;
+        
+        size = ((size_t)chRemains > size) ? size : chRemains;
+
+        if (size > buf->size - buf->len)
+        {
+            log_err ("warning", "buffer is about to overflow");
+            size = buf->size - buf->len;
+        }
+    }
+    else size = buf->size - buf->len;
+    
+    fread (buf->bufpos, size, 1, buf->stream);
+    buf->len += size;
+
+    return size;
 }
 
 size_t bufWrite (Buffer* buf, void* src, size_t size)
 {
+    assertStrict (buf, "received NULL");
+    assertStrict (src, "received NULL");
+
     assertStrict (buf->mode == 'w', "wrong buffer mode");
 
-    if (buf->len + size > buf->size) if (bufFlush (buf) == 0) return 0;
+    if (buf->bufpos + size > buf->buffer + buf->size) if (bufFlush (buf) == 0) return 0;
 
-    memcpy (buf->buffer + buf->len, src, size);
-    buf->len += size;
+    memcpy (buf->bufpos, src, size);
+    buf->bufpos += size;
+    if (buf->bufpos - buf->buffer > (ssize_t)buf->len) buf->len = buf->bufpos - buf->buffer;
 
     return size;
 }

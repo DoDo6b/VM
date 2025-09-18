@@ -4,8 +4,16 @@
 
 #include <stdint.h>
 
-#define RTASM_SIGN  "RTRTASM"
-#define RTASM_VER   "A000201"
+#define RTASM_SIGN  0X45A2833
+#define RTASM_VER   0XA000201
+
+typedef struct
+{
+    uint64_t sign;
+    uint64_t version;
+    size_t   instrc; 
+}Header;
+
 
 #define VALUEPREFIX    '#'
 #define VALUEFORMAT    "%d"

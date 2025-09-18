@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "included/logger/logger.h"
-#include "included/kassert/kassert.h"
-#include "included/Macro.h"
+#include "../../logger/logger.h"
+#include "../../kassert/kassert.h"
+#include "../../Macro.h"
 
 #include "../Policy.h"
 #if TOLERANCEPOLICY_LVL >= 2
