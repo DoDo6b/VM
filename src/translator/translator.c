@@ -1,24 +1,14 @@
 #include "translator.h"
 
 
-static void skipSpaces(FILE* file)
-{
-    char c = 0;
-    do c = (char)fgetc (file);
-    while (c == ' ' && c != EOF && c != '\n');
-
-    fseek (file, -1, SEEK_CUR);
-}
-
-
-static operand_t translateOperand (const char* filename, size_t instructionCounter, FILE* listing)
+static operand_t translateOperand (const char* filename, size_t instructionCounter, Buffer* bufR)
 {
     assertStrict (filename, "received NULL");
-    assertStrict (listing,  "received NULL");
+    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
     operand_t operand = 0;
 
-    if (!fscanf (listing, VALUEFORMAT, &operand))
+    if (!bufScanf (bufR, VALUEFORMAT, &operand))
     {
         ErrAcc |= SYNTAX;
         log_string (
@@ -38,14 +28,14 @@ static operand_t translateOperand (const char* filename, size_t instructionCount
 
 #define CASE_REG(reg)  case reg ## _HASH: return reg;
 
-static opcode_t translateReg (const char* filename, size_t instructionCounter, FILE* listing)
+static opcode_t translateReg (const char* filename, size_t instructionCounter, Buffer* bufR)
 {
     assertStrict (filename, "received NULL");
-    assertStrict (listing,  "received NULL");
+    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
     char reg[4] = {0};
 
-    if (fscanf (listing, REGISTERFORMAT, reg) == 0)
+    if (bufScanf (bufR, REGISTERFORMAT, reg) == 0)
     {
         ErrAcc |= SYNTAX;
         log_string (
@@ -91,9 +81,11 @@ static opcode_t translateReg (const char* filename, size_t instructionCounter, F
 #undef CASE_REG
 
 
-static uint64_t writeOPcode (Buffer* buf, opcode_t opcode)
+static uint64_t writeOPcode (Buffer* bufW, opcode_t opcode)
 {
-    if (bufWrite (buf, &opcode, sizeof (opcode_t)) == 0)
+    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
+
+    if (bufWrite (bufW, &opcode, sizeof (opcode_t)) == 0)
     {
         ErrAcc |= WRITINGERROR;
         log_err ("writing error", "cant write into buffer");
@@ -102,25 +94,25 @@ static uint64_t writeOPcode (Buffer* buf, opcode_t opcode)
     return ErrAcc;
 }
 
-static uint64_t writePush (const char* filename, size_t instructionCounter, Buffer* buf, FILE* listing)
+static uint64_t writePush (const char* filename, size_t instructionCounter, Buffer* bufW, Buffer* bufR)
 {
     assertStrict (filename, "received NULL");
-    assertStrict (listing,  "received NULL");
-    assertStrict (buf,      "received NULL");
+    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
+    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
     opcode_t  opcode  = PUSH << OPCODESHIFT;
     operand_t operand = 0;
 
-    skipSpaces (listing);
+    bufSpaces (bufR);
 
-    int     prefix = fgetc (listing);
+    int     prefix = bufGetc (bufR);
     switch (prefix)
     {
     case VALUEPREFIX:
-        writeOPcode (buf, opcode);
+        writeOPcode (bufW, opcode);
 
-        operand = translateOperand (filename, instructionCounter, listing);
-        if (bufWrite (buf, &operand, sizeof (operand_t)) == 0)
+        operand = translateOperand (filename, instructionCounter, bufR);
+        if (bufWrite (bufW, &operand, sizeof (operand_t)) == 0)
         {
             ErrAcc |= WRITINGERROR;
             log_err ("writing error", "cant write into buffer");
@@ -129,8 +121,8 @@ static uint64_t writePush (const char* filename, size_t instructionCounter, Buff
         break;
 
     case REGISTERPREFIX:
-        opcode += translateReg (filename, instructionCounter, listing);
-        writeOPcode (buf, opcode);
+        opcode += translateReg (filename, instructionCounter, bufR);
+        writeOPcode (bufW, opcode);
         break;
     
     default:
@@ -151,17 +143,17 @@ static uint64_t writePush (const char* filename, size_t instructionCounter, Buff
     return ErrAcc;
 }
 
-static uint64_t writeMov (const char* filename, size_t instructionCounter, Buffer* buf, FILE* listing)
+static uint64_t writeMov (const char* filename, size_t instructionCounter, Buffer* bufW, Buffer* bufR)
 {
     assertStrict (filename, "received NULL");
-    assertStrict (listing,  "received NULL");
-    assertStrict (buf,      "received NULL");
+    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
+    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
     opcode_t opcode = MOV << OPCODESHIFT;
 
-    skipSpaces (listing);
+    bufSpaces (bufR);
 
-    if (fgetc (listing) != REGISTERPREFIX)
+    if (bufGetc (bufR) != REGISTERPREFIX)
     {
         ErrAcc |= SYNTAX;
         log_string (
@@ -176,9 +168,9 @@ static uint64_t writeMov (const char* filename, size_t instructionCounter, Buffe
         exit (EXIT_FAILURE);
     }
 
-    opcode += translateReg (filename, instructionCounter, listing);
+    opcode += translateReg (filename, instructionCounter, bufR);
 
-    writeOPcode (buf, opcode);
+    writeOPcode (bufW, opcode);
 
     return ErrAcc;
 }
@@ -211,13 +203,12 @@ uint64_t translate (const char* input, const char* output)
     FILE* listing = fileOpen (input, "r");
     FILE* bin     = fileOpen (output, "wb+");
 
-    //Buffer*        bufR = bufInit (fileSize (listing));
-    char           bufR[BUFFERSIZE] = {0};
+    Buffer*        bufR = bufInit (fileSize (listing));
     Buffer*        bufW = bufInit (BUFFERSIZE);
-    //bufSetStream (bufR, listing, 'r');
-    bufSetStream (bufW, bin,     'w');
+    bufSetStream (bufR, listing, BUFREAD);
+    bufSetStream (bufW, bin,     BUFWRITE);
 
-    //bufRead (bufR, 0);
+    bufRead (bufR, 0);
 
     fseek (bin, sizeof (Header), SEEK_SET);
 
@@ -228,15 +219,17 @@ uint64_t translate (const char* input, const char* output)
     };
 
     bool halt = false;
-    while (fscanf (listing, "%s", bufR) > 0 && !halt)
+    char instruction[16];
+    while (bufScanf (bufR, "%s", instruction) && !halt)
     {
-        if (*bufR == ';')
+        if (*instruction == ';')
         {
-            fgets (bufR, sizeof (bufR), listing);
+            bufR->bufpos = strchr (bufR->bufpos, '\n');
             continue;
         }
 
-        unsigned long hash = djb2Hash (bufR, sizeof (bufR));
+
+        unsigned long hash = djb2Hash (instruction, sizeof (instruction));
 
         switch (hash)
         {
@@ -247,9 +240,9 @@ uint64_t translate (const char* input, const char* output)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
 
-            case MOV_HASH:  writeMov  (input, header.instrc, bufW, listing); break;
+            case MOV_HASH:  writeMov  (input, header.instrc, bufW, bufR); break;
 
-            case PUSH_HASH: writePush (input, header.instrc, bufW, listing); break;
+            case PUSH_HASH: writePush (input, header.instrc, bufW, bufR); break;
             
             case HALT_HASH:
                 writeOPcode (bufW, HALT << OPCODESHIFT);
@@ -276,6 +269,7 @@ uint64_t translate (const char* input, const char* output)
     log_string ("<grn>translated %llu opcode(s)<dft>\n", header.instrc);
 
     bufFree (bufW);
+    bufFree (bufR);
     fseek  (bin, 0, SEEK_SET);
     fwrite (&header, sizeof (Header), 1, bin);
     

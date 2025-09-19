@@ -1,7 +1,7 @@
 #include "vm.h"
 
 
-static Erracc_t push (opcode_t opcode, FILE* src, const VM* vm)
+static Erracc_t push (opcode_t opcode, Buffer* src, const VM* vm)
 {
     assertStrict (src,                          "received NULL");
     assertStrict (vm,                           "received NULL");
@@ -20,7 +20,7 @@ static Erracc_t push (opcode_t opcode, FILE* src, const VM* vm)
             return ErrAcc;
         }
     }
-    else fread (&operand, sizeof (operand_t), 1, src);
+    else bufCpy (src, &operand, sizeof (operand_t));
 
     
     stackPush (vm->stack, &operand);
@@ -196,24 +196,27 @@ static Erracc_t headerCmp (const Header* header)
 
 Erracc_t run (const char* input)
 {
-    FILE* src = fileOpen (input, "rb");
+    FILE* srcStream = fileOpen (input, "rb");
+    
+    Buffer* srcBuf = bufInit (fileSize (srcStream));
+    bufSetStream (srcBuf, srcStream, BUFREAD);
+    bufRead (srcBuf, 0);
 
-    Header header = {0};
-    fread (&header, sizeof (Header), 1, src);
+    Header* header = (Header*)srcBuf->bufpos;
+    bufSeek (srcBuf, sizeof (Header), SEEK_SET);
 
-    headerCmp (&header);
-    if (ErrAcc) return ErrAcc;
-    log_string ("<grn>version is compatible<dft>\n", input );
+    if (headerCmp (header)) return ErrAcc;
+    log_string ("<grn>version is compatible<dft>\n");
 
-    log_string ("<grn>%llu opcode(s) will be executed<dft>\n", header.instrc);
+    log_string ("<grn>%llu opcode(s) will be executed<dft>\n", header->instrc);
 
     VM* vm = VMInit (STACKSIZE);
 
     opcode_t opcode = 0;
 
-    for (size_t i = 0; i < header.instrc; i++)
+    for (size_t i = 0; i < header->instrc; i++)
     {
-        fread (&opcode, sizeof (opcode), 1, src);
+        bufCpy (srcBuf, &opcode, sizeof (opcode_t));
 
         switch (opcode >> OPCODESHIFT)
         {
@@ -224,16 +227,16 @@ Erracc_t run (const char* input)
             case MUL: mul (vm); break;
             case DIV: div (vm); break;
 
-            case PUSH: push (opcode, src, vm); break;
-            case MOV:  mov  (opcode,      vm); break;
+            case PUSH: push (opcode, srcBuf, vm); break;
+            case MOV:  mov  (opcode,         vm); break;
 
-            case HALT: i = header.instrc; break;
+            case HALT: i = header->instrc; break;
 
             default:
                 log_string (
                     "%s:%llu: <b><red>syntax error:<dft> unknown instruction: \"%0X\"</b>\n",
                     input,
-                    header.instrc + 1,
+                    header->instrc + 1,
                     opcode >> OPCODESHIFT
                 );
                 ErrAcc |= SYNTAX;
@@ -243,8 +246,9 @@ Erracc_t run (const char* input)
     
     log_string ("<grn>Work is done<dft>\n");
 
-    VMFree (vm);
-    fclose (src);
+    VMFree  (vm);
+    bufFree (srcBuf);
+    fclose  (srcStream);
 
     return ErrAcc;
 }

@@ -10,6 +10,7 @@
 #include "../defines/arch.h"
 #include "../defines/errcodes.h"
 #include "../included/stack/stack.h"
+#include "../included/buffer/buffer.h"
 
 
 #define STACKSIZE 1024
