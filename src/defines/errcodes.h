@@ -4,9 +4,11 @@
 
 typedef enum
 {
-    CANTOPEN            = 1,
+    FOPENERR            = 1,
     NULLRECEIVED        = 2,
+    
     SYNTAX              = 4,
+
     WRONGVERSION        = 8,
     OPCODENOTFOUND      = 16,
     WRITINGERROR        = 32,

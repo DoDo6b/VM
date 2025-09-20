@@ -6,7 +6,7 @@ Buffer* bufInit (size_t size)
 
     Buffer* buf = (Buffer*)calloc(1, sizeof (Buffer));
 
-    void* ptr = calloc (size, sizeof (char));
+    void* ptr = calloc (size + 1, sizeof (char));
     if (!ptr)
     {
         log_err ("internal error", "calloc returned NULL");
@@ -210,7 +210,7 @@ int bufScanf (Buffer* buf, const char* format, void* dst)
     assertStrict (buf->mode == BUFREAD, "incompatible buffer mode");
 
     size_t  oldFormatL = strlen (format);
-    char*   newFormat = (char*)calloc (oldFormatL + sizeof ("%n"), sizeof (char));
+    char*   newFormat = (char*)calloc (oldFormatL + sizeof ("%n\0"), sizeof (char));
 
     memcpy (newFormat, format, oldFormatL);
     memcpy (newFormat + oldFormatL, "%n", sizeof ("%n"));

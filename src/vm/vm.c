@@ -168,7 +168,7 @@ static FILE* fileOpen (const char* fname, const char* attributes)
 
     if (!stream)
     {
-        ErrAcc |= CANTOPEN;
+        ErrAcc |= FOPENERR;
         log_err ("fopen error", "cant open input file: \"%s\"", stream);
         return NULL;
     }

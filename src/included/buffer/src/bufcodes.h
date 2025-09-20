@@ -4,13 +4,13 @@
 
 typedef enum
 {
-    BUFNULL      = 1,
-    BUFNOTINITED = 2,
-    BUFDETACHED  = 4,
-    BUFFACCESS   = 8,
-    BUFOVERFLOW  = 16,
-    BUFSTREAM    = 32,
-    BUFSYNTAX    = 64,
+    BUFNULL      = 2048,
+    BUFNOTINITED = 4096,
+    BUFDETACHED  = 8192,
+    BUFFACCESS   = 16384,
+    BUFOVERFLOW  = 32768,
+    BUFSTREAM    = 65536,
+    BUFSYNTAX    = 131072,
 
 }BUFEC;
 
