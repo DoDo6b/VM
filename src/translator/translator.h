@@ -11,7 +11,7 @@
 #include "../included/kassert/kassert.h"
 #include "../included/buffer/buffer.h"
 #include "../defines/arch.h"
-#include "../defines/errcodes.h"
+#include "src/translatorcodes.h"
 #include "../vm/vm.h"
 
 

@@ -2,15 +2,21 @@
 #define BUFCODES_H
 
 
+#include "../../Macro.h"
+
+#define BUFEC_SHIFT 16
+
+#define BUF_ERRCODE(ec)  BUILD_ERRCODE (ec, BUFEC_SHIFT)
+
 typedef enum
 {
-    BUFNULL      = 2048,
-    BUFNOTINITED = 4096,
-    BUFDETACHED  = 8192,
-    BUFFACCESS   = 16384,
-    BUFOVERFLOW  = 32768,
-    BUFSTREAM    = 65536,
-    BUFSYNTAX    = 131072,
+    BUFNULL,
+    BUFNOTINITED,
+    BUFDETACHED,
+    BUFFACCESS,
+    BUFOVERFLOW,
+    BUFSTREAM,
+    BUFSYNTAX,
 
 }BUFEC;
 

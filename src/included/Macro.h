@@ -19,5 +19,11 @@
 // turn something off
 #define OFF if(0)
 
+/* constructs module errcode: 0...01...10...0
+                                   ^   ^
+                                  ec shift
+*/
+#define BUILD_ERRCODE(ec, shift)  (1llu << (ec + shift))
+
 
 #endif

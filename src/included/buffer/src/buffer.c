@@ -47,31 +47,31 @@ Erracc_t bufVerify (Buffer* buf, Erracc_t ignored)
     if (buf == NULL)
     {
         log_err ("verification error", "received NULL");
-        ErrAcc |= BUFNULL;
+        ErrAcc |= BUF_ERRCODE (BUFNULL);
         return ErrAcc;
     }
 
     if ((ignored & BUFNOTINITED) == 0 && (buf->buffer == NULL || buf->size == 0))
     {
-        ErrAcc |= BUFNOTINITED;
+        ErrAcc |= BUF_ERRCODE (BUFNOTINITED);
         log_err ("verification error", "buffer wasnt initialized");
     }
 
     if ((ignored & BUFOVERFLOW) == 0 && (buf->bufpos < buf->buffer || buf->buffer + buf->size < buf->bufpos || buf->len > buf->size))
     {
-        ErrAcc |= BUFOVERFLOW;
+        ErrAcc |= BUF_ERRCODE (BUFOVERFLOW);
         log_err ("verification error", "buffer overflow");
     }
 
     if ((ignored & BUFDETACHED) == 0 && (buf->stream == NULL))
     {
-        ErrAcc |= BUFDETACHED;
+        ErrAcc |= BUF_ERRCODE (BUFDETACHED);
         log_err ("verification error", "buffer detached (file stream is not linked)");
     }
 
     if ((ignored & BUFFACCESS) == 0 && (buf->mode != BUFWRITE && buf->mode != BUFREAD))
     {
-        ErrAcc |= BUFFACCESS;
+        ErrAcc |= BUF_ERRCODE (BUFFACCESS);
         log_err ("verification error", "stream mode is not setted or wrong");
     }
 
@@ -224,7 +224,7 @@ int bufScanf (Buffer* buf, const char* format, void* dst)
     
     if (buf->bufpos + read > buf->buffer + buf->size)
     {
-        ErrAcc |= BUFOVERFLOW;
+        ErrAcc |= BUF_ERRCODE (BUFOVERFLOW);
         log_err ("runtime error", "buffer position pointer is out of bounds");
         return -1;
     }
@@ -275,7 +275,7 @@ long long bufSeek (Buffer* buf, size_t offset, char base)
         break;
 
     default:
-        ErrAcc |= BUFSYNTAX;
+        ErrAcc |= BUF_ERRCODE (BUFSYNTAX);
         log_err ("syntax error", "unknown base");
     }
 

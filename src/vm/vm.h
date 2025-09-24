@@ -8,7 +8,7 @@
 
 #include "../included/logger/logger.h"
 #include "../defines/arch.h"
-#include "../defines/errcodes.h"
+#include "src/vmcodes.h"
 #include "../included/stack/stack.h"
 #include "../included/buffer/buffer.h"
 

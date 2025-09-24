@@ -1,0 +1,22 @@
+#ifndef STACKCODES_H
+#define STACKCODES_H
+
+#include "../../Macro.h"
+
+#define STCKEC_SHIFT 32
+
+#define STCK_ERRCODE(ec)  BUILD_ERRCODE (ec, STCKEC_SHIFT)
+
+typedef enum
+{
+    RECIVED_NULL,
+    MAIN_SIGNES_CORRUPTED,
+    NOT_INITILIZED,
+    DATABLOCK_SIGNES_CORRUPTED,
+    TOPPTR_OUTOFBOUNDS,
+    CRCMAIN_HASCHANGED,
+    CRCDATA_HASHCHANGED,
+}StckEC;
+
+
+#endif

@@ -1,0 +1,25 @@
+#ifndef VMCODES_H
+#define VMCODES_H
+
+
+#include "../../included/Macro.h"
+
+#define VMECSHIFT 48
+
+#define VM_ERRCODE(ec)  BUILD_ERRCODE (ec, VMECSHIFT)
+
+typedef enum
+{
+    VM_FOPENERR,
+    VM_NULLRECEIVED,
+    VM_WRONGVERSION,
+    VM_OPCODENOTFOUND,
+    VM_REGMISSADDRESSING,
+    VM_STACKVERIFICATION,
+    VM_VMSELFTESTING,
+    VM_MISSINGOPERAND,
+    VM_BYTECODECORRUPTED,
+}VMEC;
+
+
+#endif

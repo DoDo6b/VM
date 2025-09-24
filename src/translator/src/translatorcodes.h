@@ -1,0 +1,20 @@
+#ifndef TRANSLATORCODES_H
+#define TRANSLATORCODES_H
+
+
+#include "../../included/Macro.h"
+
+#define TRNSLTEC_SHIFT 32
+
+#define TRNSLT_ERRCODE(ec)  BUILD_ERRCODE (ec, TRNSLTEC_SHIFT)
+
+typedef enum
+{
+    TRNSLTR_FOPENERR,
+    TRNSLTR_NULLRECEIVED,
+    TRNSLTR_SYNTAX,
+    TRNSLTR_WRITINGERROR,
+}TrnsltrEC;
+
+
+#endif
