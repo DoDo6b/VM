@@ -136,7 +136,7 @@ static uint64_t mul (VM* vm)
     return ErrAcc;
 }
 
-static uint64_t div (VM* vm)    //проверка на 0, надо бы добавить указатель на пользовательскую функцию обработчика
+static uint64_t div (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -147,6 +147,14 @@ static uint64_t div (VM* vm)    //проверка на 0, надо бы доб�
         return ErrAcc;
     }
     operand_t operand1 = 0;
+
+    if (operand1 == 0)
+    {
+        ErrAcc |= VM_ERRCODE (VM_DIVISIONBYZERO);
+        log_err ("runtime error", "division by zero");
+        return ErrAcc;
+    }
+
     operand_t operand2 = 0;
     stackPop (vm->stack, &operand1);
     stackPop (vm->stack, &operand2);
@@ -199,7 +207,7 @@ Erracc_t run (const char* input)
     FILE* srcStream = fileOpen (input, "rb");
     
     Buffer* srcBuf = bufInit (fileSize (srcStream));
-    bufSetStream (srcBuf, srcStream, BUFREAD);
+    bufSetStream (srcBuf, input, srcStream, BUFREAD);
     bufRead (srcBuf, 0);
 
     Header* header = (Header*)srcBuf->bufpos;
@@ -233,13 +241,14 @@ Erracc_t run (const char* input)
             case HALT: i = header->instrc; break;
 
             default:
-                log_string (
-                    "%s:%llu: <b><red>syntax error:<dft> unknown instruction: \"%0X\"</b>\n",
+                ErrAcc |= BUF_ERRCODE (VM_OPCODENOTFOUND);
+                log_srcerr (
                     input,
                     header->instrc + 1,
+                    "bytecode corruption",
+                    "unknown instruction: \"%0X\"",
                     opcode >> OPCODESHIFT
                 );
-                ErrAcc |= BUF_ERRCODE (VM_OPCODENOTFOUND);
                 return ErrAcc;
         }
     }

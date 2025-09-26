@@ -1,181 +1,6 @@
 #include "../translator.h"
 
 
-static operand_t translateOperand (const char* filename, size_t instructionCounter, Buffer* bufR)
-{
-    assertStrict (filename, "received NULL");
-    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
-
-    operand_t operand = 0;
-
-    if (!bufScanf (bufR, VALUEFORMAT, &operand))
-    {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-        log_string (
-            "%s:%llu: <b><red>syntax error:<dft> no operand found</b>\n",
-            filename,
-            instructionCounter + 1
-        );
-        log_string (
-            "    | errAcc: %llu\n",
-            ErrAcc
-        );
-        exit (EXIT_FAILURE);
-    }
-    
-    return operand;
-}
-
-#define CASE_REG(reg)  case reg ## _HASH: return reg;
-
-static opcode_t translateReg (const char* filename, size_t instructionCounter, Buffer* bufR)
-{
-    assertStrict (filename, "received NULL");
-    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
-
-    char reg[4] = {0};
-
-    if (bufScanf (bufR, REGISTERFORMAT, reg) == 0)
-    {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-        log_string (
-            "%s:%llu: <b><red>syntax error:<dft> no operand found</b>\n",
-            filename,
-            instructionCounter + 1
-        );
-        log_string (
-            "    | errAcc: %llu\n",
-            ErrAcc
-        );
-        exit (EXIT_FAILURE);
-    }
-
-    unsigned long hash = djb2Hash (reg, sizeof (reg));
-    switch (hash)
-    {
-        CASE_REG (AAX)
-        CASE_REG (ACX)
-        CASE_REG (ADX)
-        CASE_REG (ABX)
-        CASE_REG (ASP)
-        CASE_REG (ABP)
-        CASE_REG (ASI)
-        CASE_REG (ADI)
-
-        default:
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-            log_string (
-                "%s:%llu: <b><red>syntax error:<dft> unknown register (hash: %lu)</b>\n",
-                filename,
-                instructionCounter + 1,
-                hash
-            );
-            log_string (
-                "    | errAcc: %llu\n",
-                ErrAcc
-            );
-            exit (EXIT_FAILURE);
-    }
-}
-
-#undef CASE_REG
-
-
-static uint64_t writeOPcode (Buffer* bufW, opcode_t opcode)
-{
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
-
-    if (bufWrite (bufW, &opcode, sizeof (opcode_t)) == 0)
-    {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-        log_err ("writing error", "cant write into buffer");
-        IMSTP ( exit (EXIT_FAILURE); )
-    }
-    return ErrAcc;
-}
-
-static uint64_t writePush (const char* filename, size_t instructionCounter, Buffer* bufW, Buffer* bufR)
-{
-    assertStrict (filename, "received NULL");
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
-    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
-
-    opcode_t  opcode  = PUSH << OPCODESHIFT;
-    operand_t operand = 0;
-
-    bufSpaces (bufR);
-
-    int     prefix = bufGetc (bufR);
-    switch (prefix)
-    {
-    case VALUEPREFIX:
-        writeOPcode (bufW, opcode);
-
-        operand = translateOperand (filename, instructionCounter, bufR);
-        if (bufWrite (bufW, &operand, sizeof (operand_t)) == 0)
-        {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-            log_err ("writing error", "cant write into buffer");
-            IMSTP ( exit (EXIT_FAILURE); )
-        }
-        break;
-
-    case REGISTERPREFIX:
-        opcode += translateReg (filename, instructionCounter, bufR);
-        writeOPcode (bufW, opcode);
-        break;
-    
-    default:
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-        log_string (
-            "%s:%llu: <b><red>syntax error:<dft> unknown operand type (%c)</b>\n",
-            filename,
-            instructionCounter + 1,
-            prefix
-        );
-        log_string (
-            "    | errAcc: %llu\n",
-            ErrAcc
-        );
-        exit (EXIT_FAILURE);
-    }
-
-    return ErrAcc;
-}
-
-static uint64_t writeMov (const char* filename, size_t instructionCounter, Buffer* bufW, Buffer* bufR)
-{
-    assertStrict (filename, "received NULL");
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
-    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
-
-    opcode_t opcode = MOV << OPCODESHIFT;
-
-    bufSpaces (bufR);
-
-    if (bufGetc (bufR) != REGISTERPREFIX)
-    {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-        log_string (
-            "%s:%llu: <b><red>syntax error:<dft> MOV requires correct register</b>\n",
-            filename,
-            instructionCounter + 1
-        );
-        log_string (
-            "    | errAcc: %llu\n",
-            ErrAcc
-        );
-        exit (EXIT_FAILURE);
-    }
-
-    opcode += translateReg (filename, instructionCounter, bufR);
-
-    writeOPcode (bufW, opcode);
-
-    return ErrAcc;
-}
-
-
 static FILE* fileOpen (const char* fname, const char* attributes)
 {
     assertStrict (fname,      "received NULL");
@@ -193,33 +18,17 @@ static FILE* fileOpen (const char* fname, const char* attributes)
     return stream;
 }
 
-#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode << OPCODESHIFT); break;
 
-uint64_t translate (const char* input, const char* output)
+#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode); break;
+
+static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 {
-    assertStrict (input,  "received NULL");
-    assertStrict (output, "received NULL");
-
-    FILE* listing = fileOpen (input, "r");
-    FILE* bin     = fileOpen (output, "wb+");
-
-    Buffer*        bufR = bufInit (fileSize (listing));
-    Buffer*        bufW = bufInit (BUFFERSIZE);
-    bufSetStream (bufR, listing, BUFREAD);
-    bufSetStream (bufW, bin,     BUFWRITE);
-
-    bufRead (bufR, 0);
-
-    fseek (bin, sizeof (Header), SEEK_SET);
-
-    Header header = {
-        .sign =    RTASM_SIGN,
-        .version = RTASM_VER,
-        .instrc = 0,
-    };
-
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
+    
     bool halt = false;
     char instruction[16];
+
     while (bufScanf (bufR, "%s", instruction) && !halt)
     {
         if (*instruction == ';')
@@ -240,32 +49,66 @@ uint64_t translate (const char* input, const char* output)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
 
-            case MOV_HASH:  writeMov  (input, header.instrc, bufW, bufR); break;
+            case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;
 
-            case PUSH_HASH: writePush (input, header.instrc, bufW, bufR); break;
+            case PUSH_HASH: writePush (bufW, bufR, *instrc); break;
             
             case HALT_HASH:
-                writeOPcode (bufW, HALT << OPCODESHIFT);
+                writeOPcode (bufW, HALT);
                 halt = true;
                 break;
             
             default:
                 ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-                log_string (
-                    "%s:%llu: <b><red>syntax error:<dft> unknown instruction (hash: %lu)</b>\n",
-                    input,
-                    header.instrc + 1,
+                log_srcerr
+                (
+                    bufR->name ? bufR->name : "*fname*",
+                    *instrc + 1,
+                    "syntax error",
+                    "unknown instruction (hash: %lu)",
                     hash
-                );
-                log_string (
-                    "    | errAcc: %llu\n",
-                    ErrAcc
                 );
                 return ErrAcc;
         }
-        header.instrc++;
+        *instrc += 1;
     }
 
+    return ErrAcc;
+}
+
+
+
+
+uint64_t translate (const char* input, const char* output)
+{
+    assertStrict (input,  "received NULL");
+    assertStrict (output, "received NULL");
+
+    FILE* listing = fileOpen (input, "r");
+    FILE* bin     = fileOpen (output, "wb+");
+
+    Buffer*        bufR = bufInit (fileSize (listing));
+    Buffer*        bufW = bufInit (BUFFERSIZE);
+    bufSetStream (bufR, input,  listing, BUFREAD);
+    bufSetStream (bufW, output, bin,     BUFWRITE);
+
+    bufRead (bufR, 0);
+
+    fseek (bin, sizeof (Header), SEEK_SET);
+
+    Header header = {
+        .sign =    RTASM_SIGN,
+        .version = RTASM_VER,
+        .instrc = 0,
+    };
+
+    if (decompose (bufR, bufW, &header.instrc))
+    {
+        log_err ("translation error", "translation has ended with code: %llu", ErrAcc);
+        exit (EXIT_FAILURE);
+    }
+
+    
     log_string ("<grn>translated %llu opcode(s)<dft>\n", header.instrc);
 
     bufFree (bufW);

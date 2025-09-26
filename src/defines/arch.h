@@ -18,16 +18,17 @@ typedef struct
 #define VALUEPREFIX    '#'
 #define VALUEFORMAT    "%d"
 #define REGISTERPREFIX '%'
-#define REGISTERFORMAT "%s"
+#define REGISTERFORMAT "%s" 
 
 enum OP_codes
 {
-    PUSH = 0X51,
     OUT  = 0XF0,
     POP  = 0X59,
     HALT = 0XFF,
 
+    PUSH = 0X51,
     MOV  = 0X48,
+    JMP  = 0X13,
 
     ADD  = 0XA0,
     SUB  = 0XA1,
@@ -50,8 +51,9 @@ enum Registers
 #define NUM_REGS 8
 #define OPCODESHIFT (sizeof (opcode_t) - 1) * 8
 
-typedef uint16_t opcode_t;
-typedef int32_t  operand_t;
+typedef uint16_t  opcode_t;
+typedef int32_t   operand_t;
+typedef uintptr_t pointer_t;
 
 
 #endif

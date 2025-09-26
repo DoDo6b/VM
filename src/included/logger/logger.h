@@ -56,6 +56,20 @@ const char* get_log();
         ErrAcc\
     )\
 
+#define log_srcerr(file, line, class, description, ...)  log_string \
+    (\
+        "%s:%d: %s: <b><red>" class ":<dft> " description "</b>\n",\
+        file,\
+        line,\
+        __func__,\
+        ##__VA_ARGS__\
+    );\
+    log_string \
+    (\
+        "    | errAcc: %llu\n",\
+        ErrAcc\
+    )\
+
 
 void memDump (const void* pointer, size_t byteSize);
 

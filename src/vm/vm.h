@@ -17,6 +17,7 @@
 
 typedef struct
 {
+    const char* code;
     StackHandler stack;
 
     union
@@ -35,6 +36,8 @@ typedef struct
 
         operand_t regs[NUM_REGS];
     };
+
+    const char* rip;
 }VM;
 
 VM* VMInit (size_t stackSize);

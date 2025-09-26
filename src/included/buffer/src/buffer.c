@@ -19,6 +19,7 @@ Buffer* bufInit (size_t size)
     buf->len = 0;
     buf->size = size;
     buf->stream = NULL;
+    buf->name = NULL;
 
     assertStrict (bufVerify (buf, BUFDETACHED | BUFFACCESS) == 0, "failed buffer verification");
 
@@ -79,7 +80,7 @@ Erracc_t bufVerify (Buffer* buf, Erracc_t ignored)
 }
 
 
-int bufSetStream (Buffer* buf, FILE* stream, BufMode_t mode)
+int bufSetStream (Buffer* buf, const char* name, FILE* stream, BufMode_t mode)
 {
     assertStrict (bufVerify (buf, BUFDETACHED | BUFFACCESS) == 0, "failed buffer verification");
 
@@ -92,6 +93,7 @@ int bufSetStream (Buffer* buf, FILE* stream, BufMode_t mode)
 
     buf->stream = stream;
     buf->bufpos = buf->buffer;
+    buf->name = name;
     
     #ifdef SECURE
     memset (buf->buffer, 0, buf->size);
@@ -122,8 +124,8 @@ FILE* bufFOpen (Buffer* buf, const char* fname, const char* mode)
 
 IF_DBG ( if ((w || a) && r) log_err ("warning", "buffer was opened with 'w' flag [Dual-purpose]"); )
 
-    if (w || a) bufSetStream (buf, stream, BUFWRITE);
-    else        bufSetStream (buf, stream, BUFREAD);
+    if (w || a) bufSetStream (buf, fname, stream, BUFWRITE);
+    else        bufSetStream (buf, fname, stream, BUFREAD);
 
     return stream;
 }

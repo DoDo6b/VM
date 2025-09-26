@@ -47,6 +47,7 @@ typedef struct
     char* buffer;
     char* bufpos;
     FILE* stream;
+    const char* name;   // optional cant garantee a non NULL
 }Buffer;
 
 Buffer* bufInit (size_t size);
@@ -54,8 +55,8 @@ void bufFree (Buffer* buf);
 
 Erracc_t bufVerify (Buffer* buf, Erracc_t ignored);
 
-int bufSetStream (Buffer* buf, FILE*      stream,  BufMode_t  mode);
-FILE* bufFOpen   (Buffer* buf, const char* fname, const char* mode);
+int bufSetStream (Buffer* buf, const char* name, FILE* stream,  BufMode_t  mode);
+FILE* bufFOpen   (Buffer* buf, const char* fname,              const char* mode);
 
 size_t bufRead  (Buffer* buf, size_t size);
 size_t bufWrite (Buffer* buf, void* src, size_t size); 
