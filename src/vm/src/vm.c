@@ -4,8 +4,8 @@
 static Erracc_t push (opcode_t opcode, Buffer* src, const VM* vm)
 {
     assertStrict (src,                          "received NULL");
-    assertStrict (vm,                           "received NULL");
-    assertStrict (stackVerify (vm->stack) == 0, "received NULL");
+    assertStrict (VMVerify (vm) == 0,           "vm corrupted");
+    assertStrict (stackVerify (vm->stack) == 0, "stack corrupted");
 
     operand_t operand = 0;
     opcode_t reg = opcode & UINT8_MAX;
@@ -70,7 +70,7 @@ static void pop (VM* vm)
     stackPop (vm->stack, NULL);
 }
 
-static uint64_t add (VM* vm)
+static Erracc_t add (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -92,7 +92,7 @@ static uint64_t add (VM* vm)
     return ErrAcc;
 }
 
-static uint64_t sub (VM* vm)
+static Erracc_t sub (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -114,7 +114,7 @@ static uint64_t sub (VM* vm)
     return ErrAcc;
 }
 
-static uint64_t mul (VM* vm)
+static Erracc_t mul (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -136,7 +136,7 @@ static uint64_t mul (VM* vm)
     return ErrAcc;
 }
 
-static uint64_t div (VM* vm)
+static Erracc_t div (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -162,6 +162,18 @@ static uint64_t div (VM* vm)
     operand2 /= operand1;
     
     stackPush (vm->stack, &operand2);
+
+    return ErrAcc;
+}
+
+static Erracc_t jmp (Buffer* src, VM* vm)
+{
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
+    assertStrict (bufVerify (src, 0) == 0 && src->mode == BUFREAD, "buf corrupted");
+
+    pointer_t jmp = 0;
+    bufCpy (src, &jmp, sizeof (pointer_t));
+    bufSeek (src, jmp + sizeof (Header), SEEK_SET);
 
     return ErrAcc;
 }
@@ -225,7 +237,7 @@ Erracc_t run (const char* input)
     for (size_t i = 0; i < header->instrc; i++)
     {
         bufCpy (srcBuf, &opcode, sizeof (opcode_t));
-
+        log_string ("%ld: %0X\n", srcBuf->bufpos - srcBuf->buffer - sizeof (Header) - sizeof (opcode_t), opcode >> OPCODESHIFT);
         switch (opcode >> OPCODESHIFT)
         {
             case OUT: out (vm); break;
@@ -237,6 +249,8 @@ Erracc_t run (const char* input)
 
             case PUSH: push (opcode, srcBuf, vm); break;
             case MOV:  mov  (opcode,         vm); break;
+            
+            case JMP:  jmp (srcBuf, vm); break;
 
             case HALT: i = header->instrc; break;
 

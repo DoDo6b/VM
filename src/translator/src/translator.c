@@ -26,7 +26,8 @@ static Erracc_t decomposeSpecial (const char* instr, Buffer* bufR, Buffer* bufW,
     assertStrict (instr, "received NULL");
 
     instruction_t nothing = {0};
-    if (sscanf (instr, "%s:", nothing)) return decomposeChpoint (instr, bufW);
+    char key = 0;
+    if (sscanf (instr, "%[^:]%c", nothing, &key) && key == ':') return decomposeChpoint (instr, bufW);
 
     ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
     log_srcerr

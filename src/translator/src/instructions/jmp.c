@@ -32,7 +32,8 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
     assertStrict (str, "received NULL");
 
     instruction_t jmptag = {0};
-    if (!sscanf (str, "%[^:]:", jmptag))
+    char key = 0;
+    if (sscanf (str, "%[^:]%c", jmptag, &key) < 1 || key != ':')
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
         log_err ("internal error", "sscanf cant find jmptag");

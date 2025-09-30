@@ -21,16 +21,15 @@ typedef enum
 }BufMode_t;
 
 #ifndef _WIN32
+#include <sys/stat.h>
 inline long fileSize (FILE* handler)
 {
     assertStrict (handler, "received NULL");
 
-    long position = ftell (handler);
-    fseek (handler, 0,        SEEK_END);
-    long size     = ftell (handler);
-    fseek (handler, position, SEEK_SET);
+    struct stat statistic = {0};
+    if (fstat (fileno (handler), &statistic) < 0) return -1;
 
-    return size;
+    return (long)statistic.st_size;
 }
 #else
 #include <io.h>

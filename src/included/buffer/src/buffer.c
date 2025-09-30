@@ -175,7 +175,7 @@ size_t bufRead (Buffer* buf, size_t size)
         long chRemains = ftell (buf->stream);
         chRemains = fileSize (buf->stream) - chRemains;
         
-        size = ((size_t)chRemains > size) ? size : chRemains;
+        size = ((size_t)chRemains > size) ? size : (size_t)chRemains;
 
         if (size > buf->size - buf->len)
         {
