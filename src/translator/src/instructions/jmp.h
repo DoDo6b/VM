@@ -12,7 +12,7 @@
 #include "instructions.h"
 
 
-typedef struct
+typedef struct __attribute__((packed))
 {
     opcode_t opcode;
     pointer_t jmptag;

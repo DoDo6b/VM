@@ -234,10 +234,10 @@ Erracc_t run (const char* input)
 
     opcode_t opcode = 0;
 
-    for (size_t i = 0; i < header->instrc; i++)
+    bool halt = false;
+    while (!halt)
     {
         bufCpy (srcBuf, &opcode, sizeof (opcode_t));
-        log_string ("%ld: %0X\n", srcBuf->bufpos - srcBuf->buffer - sizeof (Header) - sizeof (opcode_t), opcode >> OPCODESHIFT);
         switch (opcode >> OPCODESHIFT)
         {
             case OUT: out (vm); break;
@@ -252,7 +252,7 @@ Erracc_t run (const char* input)
             
             case JMP:  jmp (srcBuf, vm); break;
 
-            case HALT: i = header->instrc; break;
+            case HALT: halt = true; break;
 
             default:
                 ErrAcc |= BUF_ERRCODE (VM_OPCODENOTFOUND);

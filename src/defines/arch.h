@@ -56,7 +56,7 @@ enum Registers
 
 typedef uint16_t  opcode_t;
 typedef int32_t   operand_t;
-typedef uintptr_t pointer_t;
+typedef size_t pointer_t;
 
 
 #endif

@@ -48,10 +48,9 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     
-    bool halt = false;
     instruction_t instruction = {0};
 
-    while (bufScanf (bufR, "%s", instruction) && !halt)
+    while (bufScanf (bufR, "%s", instruction) > 0)
     {
         if (*instruction == ';')
         {
@@ -70,6 +69,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             CASE_SIMPLEINSTRUCTION (SUB)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
+            CASE_SIMPLEINSTRUCTION (HALT)
 
             case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;
 
@@ -77,15 +77,12 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 
             case PUSH_HASH: writePush (bufW, bufR, *instrc); break;
             
-            case HALT_HASH:
-                writeOPcode (bufW, HALT);
-                halt = true;
-                break;
-            
             default:  decomposeSpecial (instruction, bufR, bufW, *instrc);
         }
         *instrc += 1;
     }
+
+    writeOPcode (bufW, HALT);
 
     if (remainingUnprocJMPReq () != 0)
     {

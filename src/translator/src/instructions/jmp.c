@@ -130,7 +130,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC)
         }
     }
 
-    if (bufWrite (bufW, &opcode, sizeof (JMPrequest)) == 0)
+    if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
         log_err ("writing error", "cant write into buffer");
