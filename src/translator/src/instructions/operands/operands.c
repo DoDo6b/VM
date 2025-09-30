@@ -29,7 +29,7 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
 {
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
-    char reg[4] = {0};
+    instruction_t reg = {0};
 
     if (bufScanf (bufR, REGISTERFORMAT, reg) == 0)
     {
@@ -44,7 +44,7 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
         exit (EXIT_FAILURE);
     }
 
-    unsigned long hash = djb2Hash (reg, sizeof (reg));
+    hash_t hash = djb2Hash (reg, sizeof (reg));
     switch (hash)
     {
         CASE_REG (AAX)

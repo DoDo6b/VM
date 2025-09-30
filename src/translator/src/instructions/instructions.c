@@ -21,7 +21,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
     assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
-    opcode_t  opcode  = PUSH << OPCODESHIFT;
+    opcode_t  opcode  = PUSH;
     operand_t operand = 0;
 
     bufSpaces (bufR);
@@ -67,7 +67,7 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
     assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
-    opcode_t opcode = MOV << OPCODESHIFT;
+    opcode_t opcode = MOV;
 
     bufSpaces (bufR);
 

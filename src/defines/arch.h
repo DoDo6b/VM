@@ -28,13 +28,16 @@ enum OP_codes
 
     PUSH = 0X51,
     MOV  = 0X48,
-    JMP  = 0X13,
+    JMP  = 0X3A,
 
     ADD  = 0XA0,
     SUB  = 0XA1,
     MUL  = 0XA2,
     DIV  = 0XA3,
 };
+
+#define INSTRUCTIONBUF 16
+typedef char instruction_t[INSTRUCTIONBUF];
 
 enum Registers
 {

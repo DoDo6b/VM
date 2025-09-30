@@ -19,6 +19,27 @@ static FILE* fileOpen (const char* fname, const char* attributes)
 }
 
 
+static Erracc_t decomposeSpecial (const char* instr, Buffer* bufR, Buffer* bufW, size_t instrc)
+{
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
+    assertStrict (instr, "received NULL");
+
+    instruction_t nothing = {0};
+    if (sscanf (instr, "%s:", nothing)) return decomposeChpoint (instr, bufW);
+
+    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
+    log_srcerr
+    (
+        bufR->name ? bufR->name : "*fname*",
+        instrc + 1,
+        "syntax error",
+        "unknown instruction (hash: %lu)",
+        djb2Hash (instr, sizeof (instruction_t))
+    );
+    return ErrAcc;
+}
+
 #define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode); break;
 
 static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
@@ -27,7 +48,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     
     bool halt = false;
-    char instruction[16];
+    instruction_t instruction = {0};
 
     while (bufScanf (bufR, "%s", instruction) && !halt)
     {
@@ -38,7 +59,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         }
 
 
-        unsigned long hash = djb2Hash (instruction, sizeof (instruction));
+        hash_t hash = djb2Hash (instruction, sizeof (instruction));
 
         switch (hash)
         {
@@ -51,6 +72,8 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 
             case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;
 
+            case JMP_HASH:  decomposeJMP (bufR, bufW, *instrc); break;
+
             case PUSH_HASH: writePush (bufW, bufR, *instrc); break;
             
             case HALT_HASH:
@@ -58,19 +81,15 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
                 halt = true;
                 break;
             
-            default:
-                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-                log_srcerr
-                (
-                    bufR->name ? bufR->name : "*fname*",
-                    *instrc + 1,
-                    "syntax error",
-                    "unknown instruction (hash: %lu)",
-                    hash
-                );
-                return ErrAcc;
+            default:  decomposeSpecial (instruction, bufR, bufW, *instrc);
         }
         *instrc += 1;
+    }
+
+    if (remainingUnprocJMPReq () != 0)
+    {
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
+        log_err ("syntax error", "missing jmptags");
     }
 
     return ErrAcc;

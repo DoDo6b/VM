@@ -9,6 +9,7 @@
 #include "../../../defines/arch.h"
 #include "../translatorcodes.h"
 #include "operands/operands.h"
+#include "jmp.h"
 
 
 enum InstructionHash

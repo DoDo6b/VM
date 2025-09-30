@@ -33,14 +33,14 @@ FILE* log_start (const char* fname)
 }
 
 
-unsigned long djb2Hash (const char* hashable, size_t size)
+hash_t djb2Hash (const char* hashable, size_t size)
 {
     if (!hashable)
     {
         print_stderr ("internal error", "can't get hash(NULL received)\n");
         return 0;
     }
-    unsigned long hash = 5381;
+    hash_t hash = 5381;
     
     for (; *hashable && size > 0; hashable++, size--)
     {
