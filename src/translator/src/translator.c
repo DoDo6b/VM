@@ -41,7 +41,7 @@ static Erracc_t decomposeSpecial (const char* instr, Buffer* bufR, Buffer* bufW,
     return ErrAcc;
 }
 
-#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode); break;
+#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode << OPCODESHIFT); break;
 
 static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 {
@@ -58,22 +58,28 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             continue;
         }
 
-
         hash_t hash = djb2Hash (instruction, sizeof (instruction));
 
         switch (hash)
         {
+            CASE_SIMPLEINSTRUCTION (HALT)
             CASE_SIMPLEINSTRUCTION (OUT)
             CASE_SIMPLEINSTRUCTION (POP)
+            CASE_SIMPLEINSTRUCTION (CMP)
             CASE_SIMPLEINSTRUCTION (ADD)
             CASE_SIMPLEINSTRUCTION (SUB)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
-            CASE_SIMPLEINSTRUCTION (HALT)
 
             case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;
 
-            case JMP_HASH:  decomposeJMP (bufR, bufW, *instrc); break;
+            case JMP_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_NOCOND); break;
+            case JNZ_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_NZERO);  break;
+            case JZ_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
+            case JL_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
+            case JLE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
+            case JG_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
+            case JGE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
 
             case PUSH_HASH: writePush (bufW, bufR, *instrc); break;
             
@@ -104,7 +110,7 @@ uint64_t translate (const char* input, const char* output)
     FILE* listing = fileOpen (input, "r");
     FILE* bin     = fileOpen (output, "wb+");
 
-    Buffer*        bufR = bufInit (fileSize (listing));
+    Buffer*        bufR = bufInit ((size_t)fileSize (listing));
     Buffer*        bufW = bufInit (BUFFERSIZE);
     bufSetStream (bufR, input,  listing, BUFREAD);
     bufSetStream (bufW, output, bin,     BUFWRITE);

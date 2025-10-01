@@ -5,8 +5,6 @@ Erracc_t writeOPcode (Buffer* bufW, opcode_t opcode)
 {
     assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
 
-    opcode <<= OPCODESHIFT;
-
     if (bufWrite (bufW, &opcode, sizeof (opcode_t)) == 0)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
@@ -21,7 +19,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
     assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
-    opcode_t  opcode  = PUSH;
+    opcode_t  opcode  = PUSH << OPCODESHIFT;
     operand_t operand = 0;
 
     bufSpaces (bufR);
@@ -67,7 +65,7 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
     assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
-    opcode_t opcode = MOV;
+    opcode_t opcode = MOV << OPCODESHIFT;
 
     bufSpaces (bufR);
 

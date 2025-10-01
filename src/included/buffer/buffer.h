@@ -26,7 +26,7 @@ inline long fileSize (FILE* handler)
 {
     assertStrict (handler, "received NULL");
 
-    struct stat statistic = {0};
+    struct stat statistic = {};
     if (fstat (fileno (handler), &statistic) < 0) return -1;
 
     return (long)statistic.st_size;
@@ -40,13 +40,13 @@ inline long fileSize (FILE* handler)
 
 typedef struct
 {
-    BufMode_t mode;
-    size_t len;
-    size_t size;
-    char* buffer;
-    char* bufpos;
-    FILE* stream;
-    const char* name;   // optional cant garantee a non NULL
+    BufMode_t   mode;
+    size_t      len;
+    size_t      size;
+    char*       buffer;
+    char*       bufpos;
+    FILE*       stream;
+    const char* name;   // optional, non NULL isnt garanted
 }Buffer;
 
 Buffer* bufInit (size_t size);
@@ -62,10 +62,10 @@ size_t bufWrite (Buffer* buf, void* src, size_t size);
 size_t bufFlush (Buffer* buf);
 
 int bufScanf    (Buffer* buf, const char* format, void* dst);
+char bufGetc    (Buffer* buf);
 
-char bufGetc (Buffer* buf);
-long long bufSeek (Buffer* buf, size_t offset, char base);
-char* bufGetp (Buffer* buf);
+long long bufSeek (Buffer* buf, long offset, char base);
+long      bufTell (Buffer* buf);
 void bufCpy (Buffer* buf, void* dst, size_t size);
 
 void bufSpaces (Buffer* buf);

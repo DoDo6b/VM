@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #define RTASM_SIGN  0X45A2833
-#define RTASM_VER   0XA000201
+#define RTASM_VER   0XA000303
 
 typedef struct
 {
@@ -22,18 +22,28 @@ typedef struct
 
 enum OP_codes
 {
-    OUT  = 0XF0,
-    POP  = 0X59,
     HALT = 0XFF,
 
-    PUSH = 0X51,
-    MOV  = 0X48,
-    JMP  = 0X3A,
+    OUT   = 0X50,
+    POP   = 0X55,
+    PUSH  = 0X53,
 
-    ADD  = 0XA0,
-    SUB  = 0XA1,
-    MUL  = 0XA2,
-    DIV  = 0XA3,
+    MOV   = 0X80,
+
+    JMP   = 0X3F,
+    JNZ   = 0X3E,
+    JZ    = 0X31,
+    JL    = 0X36,
+    JLE   = 0X37,
+    JGE   = 0X39,
+    JG    = 0X3A,
+
+    CMP  = 0XB0,
+
+    ADD   = 0XA0,
+    SUB   = 0XA1,
+    MUL   = 0XA2,
+    DIV   = 0XA3,
 };
 
 #define INSTRUCTIONBUF 16

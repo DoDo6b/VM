@@ -13,13 +13,13 @@ Buffer* bufInit (size_t size)
         return NULL;
     }
 
-    buf->mode = NOTSETTED;
-    buf->buffer = (char*)ptr;
-    buf->bufpos = buf->buffer;
-    buf->len = 0;
-    buf->size = size;
-    buf->stream = NULL;
-    buf->name = NULL;
+    buf->mode =     NOTSETTED;
+    buf->buffer =   (char*)ptr;
+    buf->bufpos =   buf->buffer;
+    buf->len =      0;
+    buf->size =     size;
+    buf->stream =   NULL;
+    buf->name =     NULL;
 
     assertStrict (bufVerify (buf, BUFDETACHED | BUFFACCESS) == 0, "failed buffer verification");
 
@@ -173,6 +173,7 @@ size_t bufRead (Buffer* buf, size_t size)
     if (size != 0)
     {
         long chRemains = ftell (buf->stream);
+        if (chRemains >= 0) 
         chRemains = fileSize (buf->stream) - chRemains;
         
         size = ((size_t)chRemains > size) ? size : (size_t)chRemains;
@@ -200,7 +201,7 @@ size_t bufWrite (Buffer* buf, void* src, size_t size)
 
     memcpy (buf->bufpos, src, size);
     buf->bufpos += size;
-    if (buf->bufpos - buf->buffer > (ssize_t)buf->len) buf->len = buf->bufpos - buf->buffer;
+    if (buf->bufpos - buf->buffer > (ssize_t)buf->len) buf->len = (size_t)(buf->bufpos - buf->buffer);
 
     return size;
 }
@@ -252,7 +253,7 @@ char bufGetc (Buffer* buf)
     return c;
 }
 
-long long bufSeek (Buffer* buf, size_t offset, char base)
+long long bufSeek (Buffer* buf, long offset, char base)
 {
     assertStrict (bufVerify (buf, 0) == 0, "buffer failed verification");
 
@@ -284,9 +285,9 @@ long long bufSeek (Buffer* buf, size_t offset, char base)
     return buf->bufpos - buf->buffer;
 }
 
-char* bufGetp (Buffer* buf)
+long bufTell (Buffer* buf)
 {
-    return buf->bufpos;
+    return (long)(buf->bufpos - buf->buffer);
 }
 
 void bufCpy (Buffer* buf, void* dst, size_t size)

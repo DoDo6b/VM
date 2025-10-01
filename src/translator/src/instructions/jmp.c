@@ -22,8 +22,8 @@ static struct
 }JMPWaitingList = {
     .jmpTagTotal      =  0,
     .jmpRequestsTotal =  0,
-    .jmptable         = {0},
-    .jmprequests      = {0},
+    .jmptable         = {},
+    .jmprequests      = {},
 };
 
 Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
@@ -79,13 +79,30 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
     return ErrAcc;
 }
 
-Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC)
+Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condition)
 {
     assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
+    opcode_t jmpopcode = 0;
+
+    switch (condition)
+    {
+        case JMP_NOCOND: jmpopcode = JMP << OPCODESHIFT; break;
+        case JMP_LESS:   jmpopcode = JL  << OPCODESHIFT; break;
+        case JMP_LEQ:    jmpopcode = JLE << OPCODESHIFT; break;
+        case JMP_NZERO:  jmpopcode = JNZ << OPCODESHIFT; break;
+        case JMP_ZERO:   jmpopcode = JZ  << OPCODESHIFT; break;
+        case JMP_GEQ:    jmpopcode = JGE << OPCODESHIFT; break;
+        case JMP_GRTR:   jmpopcode = JG  << OPCODESHIFT; break;
+        default:
+            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
+            log_err ("internal error", "wrong type of JMP");
+            return ErrAcc;
+    }
+
     JMPopcode opcode = {
-        .opcode   = JMP << OPCODESHIFT,
+        .opcode   = jmpopcode,
         .jmptag = 0,
     };
 
@@ -102,6 +119,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC)
             "syntax error",
             "no jmp point found"
         );
+        return ErrAcc;
     }
 
     hash_t hash = djb2Hash (jmptag, sizeof (jmptag));
