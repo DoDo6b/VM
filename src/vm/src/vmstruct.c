@@ -1,17 +1,26 @@
 #include "../vm.h"
 
 
-VM* VMInit (size_t stackSize)
+VM* VMInit (size_t stackSize, size_t ramSize)
 {
     VM* vm = (VM*)calloc(1, sizeof (VM));
     
     if (!vm)
     {
-        ErrAcc |= VM_ERRCODE (VM_NULLRECEIVED);
-        log_err ("runtime error", "calloc returned NULL");
+        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
+        log_err ("internal error", "calloc returned NULL");
         return NULL;
     }
     vm->stack = stackInit (stackSize, sizeof (operand_t));
+
+    vm->ram.data = (char*)calloc (ramSize, sizeof (char));
+    if (!vm->ram.data)
+    {
+        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
+        log_err ("internal error", "calloc returned NULL");
+        return NULL;
+    }
+    vm->ram.size = ramSize;
 
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -22,10 +31,19 @@ void VMFree (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    stackFree (vm->stack);
-    memset (vm, 0, sizeof (VM));
-    
-    free (vm);
+    if (vm)
+    {
+        stackFree (vm->stack);
+        free (vm->ram.data);
+        memset (vm, 0, sizeof (VM));
+        
+        free (vm);
+    }
+    else
+    {
+        ErrAcc |= VM_NULLRECEIVED;
+        log_err ("runtime error", "received NULL");
+    }
 }
 
 Erracc_t VMVerify (const VM* vm)
@@ -50,6 +68,12 @@ Erracc_t VMVerify (const VM* vm)
     {
         ErrAcc |= VM_ERRCODE (VM_REGMISSADDRESSING);
         log_err ("verification error", "discrepancy in the addresses");
+    }
+
+    if (!vm->ram.data)
+    {
+        ErrAcc |= VM_ERRCODE (VM_RAMVERIFICATION);
+        log_err ("verification error", "RAM is a NULL");
     }
 
     Erracc_t stackST = stackVerify (vm->stack);

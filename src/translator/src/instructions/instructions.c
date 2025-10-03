@@ -69,22 +69,15 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
 
     bufSpaces (bufR);
 
-    if (bufGetc (bufR) != REGISTERPREFIX)
+    if (bufGetc (bufR) == '[')
     {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-        log_srcerr
-        (
-            bufR->name,
-            instrc + 1,
-            "syntax error",
-            "MOV requires correct register"
-        );
-        exit (EXIT_FAILURE);
+        writeOPcode (bufW, opcode);
+        bufWrite (bufW, bufR->bufpos, sizeof (pointer_t));
+        bufSeek (bufR, sizeof (pointer_t), SEEK_CUR);
     }
+    else if (bufGetc (bufR) == REGISTERPREFIX) opcode += translateReg (bufR, instrc);
 
     opcode += translateReg (bufR, instrc);
-
-    writeOPcode (bufW, opcode);
 
     return ErrAcc;
 }

@@ -20,7 +20,7 @@
     #define stackVerify(stack)                               stackVerifyD (stack)
 
 #else
-    #include "src/handlers.h"
+    #include "src/handlers/handlers.h"
 
     #define stackInit(numOfElem, sizeOfElem)                 stackInitH   (numOfElem, sizeOfElem)
     #define stackRealloc(stack, newCapacity, ignoreDataLoss) stackReallocH (stack, newCapacity, ignoreDataLoss)

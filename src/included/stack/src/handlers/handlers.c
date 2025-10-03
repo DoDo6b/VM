@@ -1,4 +1,4 @@
-#include "stack_.h"
+#include "../stack_.h"
 #include "handlers.h"
 
 static Stack* Pointers[HANDLERSCAP] = {NULL};
@@ -33,7 +33,7 @@ static Stack* handlerFree (StackHandler handler)
     else return NULL;
 }
 
-StackHandler stackInitH (size_t numOfElem, size_t sizeOfElem)
+StackHandler stackInitH (size_t numOfElem, ssize_t sizeOfElem)
 {
     Stack* ptr = stackInitD (numOfElem, sizeOfElem);
     return handlerAdd (ptr);
@@ -81,7 +81,7 @@ void stackDumpH_ (const char* name, StackHandler handle, void (*print)(const voi
     stackDumpD_ (name, Pointers[handle], print);
 }
 
-uint64_t stackVerifyH_ (const char* callerFile, unsigned int callerLine, StackHandler handle)
+Erracc_t stackVerifyH_ (const char* callerFile, unsigned int callerLine, StackHandler handle)
 {
     assertStrict (handle < HANDLERSCAP && Pointers[handle], "invalid handler");
     return stackVerifyD_ (callerFile, callerLine, Pointers[handle]);

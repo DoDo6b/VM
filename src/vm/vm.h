@@ -14,11 +14,17 @@
 
 
 #define STACKSIZE 1024
+#define RAMSIZE 4096
+
 
 typedef struct
 {
     StackHandler stack;
-
+    struct
+    {
+        size_t size;
+        char* data;
+    }ram;
     union
     {
         struct
@@ -39,7 +45,7 @@ typedef struct
     bool cf;
 }VM;
 
-VM* VMInit (size_t stackSize);
+VM* VMInit (size_t stackSize, size_t ramSize);
 
 void VMFree (VM* vm);
 

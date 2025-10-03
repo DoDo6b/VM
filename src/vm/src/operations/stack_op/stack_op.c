@@ -7,21 +7,36 @@ Erracc_t push (opcode_t opcode, Buffer* src, const VM* vm)
     assertStrict (stackVerify (vm->stack) == 0, "stack corrupted");
 
     operand_t operand = 0;
-    opcode_t reg = opcode & UINT8_MAX;
+    opcode_t mod = opcode & UINT8_MAX;
+    pointer_t ramPtr = 0;
 
-    if (reg)
+    switch (mod >> 6)
     {
-        if (reg <= NUM_REGS) operand = vm->regs[reg];
-        else
-        {
+        case 0: bufCpy (src, &operand, sizeof (operand_t)); break;
+        case 1:
+            if (mod & 64 <= NUM_REGS) operand = vm->regs[mod & 64];
+            else
+            {
+                ErrAcc |= BUF_ERRCODE (VM_BYTECODECORRUPTED);
+                log_err ("translation error", "bytecode corrupted");
+                return ErrAcc;
+            }
+            break;
+        case 2:
+            bufCpy (src, &ramPtr, sizeof (pointer_t));
+            if (ramPtr >= vm->ram.size)
+            {
+                ErrAcc |= BUF_ERRCODE (VM_SEGFAULT);
+                log_err ("runtime error", "segfault");
+            }
+            operand = vm->ram.data[ramPtr];
+            break;
+        default:
             ErrAcc |= BUF_ERRCODE (VM_BYTECODECORRUPTED);
             log_err ("translation error", "bytecode corrupted");
             return ErrAcc;
-        }
     }
-    else bufCpy (src, &operand, sizeof (operand_t));
 
-    
     stackPush (vm->stack, &operand);
 
     return ErrAcc;

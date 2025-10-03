@@ -41,7 +41,7 @@ static Erracc_t headerCmp (const Header* header)
 
 static Erracc_t runThread (Buffer* srcBuf, size_t instrc)
 {
-    VM* vm = VMInit (STACKSIZE);
+    VM* vm = VMInit (STACKSIZE, RAMSIZE);
 
     opcode_t opcode = 0;
 

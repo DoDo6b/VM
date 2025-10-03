@@ -18,7 +18,8 @@ typedef struct
 #define VALUEPREFIX    '#'
 #define VALUEFORMAT    "%d"
 #define REGISTERPREFIX '%'
-#define REGISTERFORMAT "%s" 
+#define REGISTERFORMAT "%s"
+#define RAPREFIX       "[]"
 
 enum OP_codes
 {
@@ -28,22 +29,22 @@ enum OP_codes
     POP   = 0X55,
     PUSH  = 0X53,
 
-    MOV   = 0X80,
+    MOV   = 0X39,
 
     JMP   = 0X3F,
-    JNZ   = 0X3E,
-    JZ    = 0X31,
-    JL    = 0X36,
-    JLE   = 0X37,
-    JGE   = 0X39,
-    JG    = 0X3A,
+    JNZ   = 0X75,
+    JZ    = 0X74,
+    JL    = 0X7C,
+    JLE   = 0X7E,
+    JGE   = 0X7D,
+    JG    = 0X7F,
 
     CMP  = 0XB0,
 
-    ADD   = 0XA0,
-    SUB   = 0XA1,
-    MUL   = 0XA2,
-    DIV   = 0XA3,
+    ADD   = 0XA1,
+    SUB   = 0XA2,
+    MUL   = 0XA3,
+    DIV   = 0XA4,
 };
 
 #define INSTRUCTIONBUF 16
