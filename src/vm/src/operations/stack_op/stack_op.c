@@ -28,6 +28,7 @@ Erracc_t push (VM* vm)
                 log_err ("runtime error", "segfault");
             }
             stackPush (vm->stack, vm->memseg.memory + *(const pointer_t*)vm->codeseg.rip);
+            vm->codeseg.rip += sizeof (pointer_t);
             break;
         default:
             ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);

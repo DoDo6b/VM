@@ -27,6 +27,7 @@ Erracc_t mov (VM* vm)
                 log_err ("runtime error", "segfault");
             }
             stackPop (vm->stack, vm->memseg.memory + *(const pointer_t*)vm->codeseg.rip);
+            vm->codeseg.rip += sizeof (pointer_t);
             break;
 
         default:
