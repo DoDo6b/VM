@@ -7,15 +7,6 @@
 #include "../run.h"
 
 
-#define STOPONERR(func)  func;\
-if (ErrAcc != 0)\
-{\
-    ErrAcc |= VM_ERRCODE (VM_RUNTIMEERR);\
-    log_err ("runtime error", "run has stopped with code: %llu", ErrAcc);\
-    VMFree (vm);\
-    return ErrAcc;\
-}
-
 static Erracc_t runThread (const char* bcname)
 {
     VM* vm = VMInit (bcname, STACKSIZE, RAMSIZE);
@@ -33,26 +24,26 @@ static Erracc_t runThread (const char* bcname)
 
         switch (*vm->codeseg.rip)
         {
-            case OUT: out (vm); break;
-            case POP: pop (vm); break;
+            case OUT:  out  (vm); break;
+            case POP:  pop  (vm); break;
 
-            case CMP: cmp (vm); break;
+            case CMP:  cmp  (vm); break;
             
-            case ADD: STOPONERR ( add (vm) ) break;
-            case SUB: STOPONERR ( sub (vm) ) break;
-            case MUL: STOPONERR ( mul (vm) ) break;
-            case DIV: STOPONERR ( div (vm) ) break;
+            case ADD:  add  (vm); break;
+            case SUB:  sub  (vm); break;
+            case MUL:  mul  (vm); break;
+            case DIV:  div  (vm); break;
 
-            case PUSH: STOPONERR ( push (vm) ) break;
-            case MOV:  STOPONERR ( mov  (vm) ) break;
+            case PUSH:  push(vm); break;
+            case MOV:   mov (vm); break;
             
-            case JMP:   STOPONERR ( jmp (vm) ) break;
-            case JNZ:   STOPONERR ( jnz (vm) ) break;
-            case JZ:    STOPONERR ( jz ( vm) ) break;
-            case JL:    STOPONERR ( jl ( vm) ) break;
-            case JG:    STOPONERR ( jg ( vm) ) break;
-            case JLE:   STOPONERR ( jle (vm) ) break;
-            case JGE:   STOPONERR ( jge (vm) ) break;
+            case JMP:   jmp (vm); break;
+            case JNZ:   jnz (vm); break;
+            case JZ:    jz  (vm); break;
+            case JL:    jl  (vm); break;
+            case JG:    jg  (vm); break;
+            case JLE:   jle (vm); break;
+            case JGE:   jge (vm); break;
 
             case HALT: halt = true; break;
 
@@ -67,6 +58,12 @@ static Erracc_t runThread (const char* bcname)
                 );
                 VMFree (vm);
                 return ErrAcc;
+        }
+        
+        if (ErrAcc)
+        {
+            log_err ("runtime error", "aborting");
+            break;
         }
     }
 

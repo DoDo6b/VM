@@ -11,8 +11,8 @@ Erracc_t push (VM* vm)
 
     switch (mod >> 6)
     {
-        case 0: stackPush (vm->stack, vm->codeseg.rip); vm->codeseg.rip += sizeof (operand_t); break;
-        case 1:
+        case IMM: stackPush (vm->stack, vm->codeseg.rip); vm->codeseg.rip += sizeof (operand_t); break;
+        case REG:
             if ((mod & ~(3 << 6)) <= NUM_REGS) stackPush (vm->stack, &vm->regs[mod & ~(3 << 6)]);
             else
             {
@@ -21,7 +21,7 @@ Erracc_t push (VM* vm)
                 return ErrAcc;
             }
             break;
-        case 2:
+        case MEM:
             if (*(const pointer_t*)vm->codeseg.rip >= vm->memseg.size)
             {
                 ErrAcc |= VM_ERRCODE (VM_SEGFAULT);

@@ -67,7 +67,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
             );
             return ErrAcc;
         }
-        bufR->bufpos = endptr;
+        bufR->bufpos = endptr + 1;
 
         if (bufWrite (bufW, &ptr, sizeof (pointer_t)) == 0)
         {
@@ -126,7 +126,7 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
             );
             return ErrAcc;
         }
-        bufR->bufpos = endptr;
+        bufR->bufpos = endptr+1;
 
         if (bufWrite (bufW, &ptr, sizeof (pointer_t)) == 0)
         {
