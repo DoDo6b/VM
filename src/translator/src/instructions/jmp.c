@@ -132,7 +132,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
     {
         if (JMPWaitingList.jmptable[i].hash == hash)
         {
-            opcode.offset = (offset_t)(JMPWaitingList.jmptable[i].absptr - (pointer_t)bufW->bufpos);
+            opcode.offset = (offset_t)(JMPWaitingList.jmptable[i].absptr - (pointer_t)bufW->bufpos - 1);
             if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
             {
                 ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);

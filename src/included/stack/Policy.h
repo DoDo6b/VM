@@ -1,7 +1,7 @@
 #ifndef POLICY_H
 #define POLICY_H
 
-#define AREALLOC
+//#define AREALLOC
 
 #define TOLERANCEPOLICY_LVL 3
 #define SECURITY_LVL        1

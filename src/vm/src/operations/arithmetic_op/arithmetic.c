@@ -8,7 +8,6 @@ Erracc_t add (VM* vm)
 
     if (stackLen (vm->stack) < 2)
     {
-        stackDump (vm->stack);
         ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
