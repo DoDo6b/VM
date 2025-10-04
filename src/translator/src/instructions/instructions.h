@@ -2,6 +2,9 @@
 #define INSTRUCTIONS_H
 
 
+#include <inttypes.h>
+#include <ctype.h>
+
 #include "../../../defines/settings.h"
 #include "../../../included/logger/logger.h"
 #include "../../../included/kassert/kassert.h"
@@ -14,28 +17,28 @@
 
 enum InstructionHash
 {
-    HALT_HASH = 6384101742,
+    HALT_HASH = 2090320366,
 
-    OUT_HASH   = 193465917,
+    OUT_HASH   = 193501853,
     POP_HASH   = 193466804,
-    PUSH_HASH  = 6384411237,
+    PUSH_HASH  = 2090629861,
 
-    MOV_HASH   = 193463543,
+    MOV_HASH   = 193499479,
 
-    JMP_HASH   = 193460204,
-    JNZ_HASH   = 193460247,
-    JZ_HASH    = 5862441,
-    JL_HASH    = 5862427,
-    JLE_HASH   = 193460160,
-    JGE_HASH   = 193459995,
-    JG_HASH    = 5862422,
+    JMP_HASH   = 193496140,
+    JNZ_HASH   = 193496183,
+    JZ_HASH    = 5863529,
+    JL_HASH    = 5863515,
+    JLE_HASH   = 193496096,
+    JGE_HASH   = 193495931,
+    JG_HASH    = 5863510,
 
-    CMP_HASH  = 193452581,
+    CMP_HASH  = 193488517,
 
-    ADD_HASH   = 193450094,
-    SUB_HASH   = 193470255,
-    MUL_HASH   = 193463731,
-    DIV_HASH   = 193453544,
+    ADD_HASH   = 193486030,
+    SUB_HASH   = 193506191,
+    MUL_HASH   = 193499667,
+    DIV_HASH   = 193489480,
 };
 
 

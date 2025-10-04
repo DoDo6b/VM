@@ -3,7 +3,7 @@
 
 #include "../../Macro.h"
 
-#define STCKEC_SHIFT 32
+#define STCKEC_SHIFT 8
 
 #define STCK_ERRCODE(ec)  BUILD_ERRCODE (ec, STCKEC_SHIFT)
 

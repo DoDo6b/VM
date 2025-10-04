@@ -77,4 +77,23 @@ typedef unsigned long hash_t;
 
 hash_t djb2Hash (const char* hashable, size_t size);
 
+
+#ifndef _WIN32
+#include <sys/stat.h>
+inline long fileSize (FILE* handler)
+{
+    assertStrict (handler, "received NULL");
+
+    struct stat statistic = {};
+    if (fstat (fileno (handler), &statistic) < 0) return -1;
+
+    return (long)statistic.st_size;
+}
+#else
+#include <io.h>
+
+#define fileSize(handler)  filelength (fileno (handler))
+#endif
+
+
 #endif

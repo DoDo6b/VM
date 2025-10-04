@@ -3,7 +3,7 @@
 
 #define AREALLOC
 
-#define TOLERANCEPOLICY_LVL 0
+#define TOLERANCEPOLICY_LVL 3
 #define SECURITY_LVL        1
 #define LOGGINGLVL          3
 

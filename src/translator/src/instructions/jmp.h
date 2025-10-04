@@ -15,7 +15,7 @@
 typedef struct __attribute__((packed))
 {
     opcode_t opcode;
-    pointer_t jmptag;
+    offset_t offset;
 }JMPopcode;
 
 

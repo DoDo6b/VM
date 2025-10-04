@@ -20,23 +20,6 @@ typedef enum
     BUFREAD      = 2,
 }BufMode_t;
 
-#ifndef _WIN32
-#include <sys/stat.h>
-inline long fileSize (FILE* handler)
-{
-    assertStrict (handler, "received NULL");
-
-    struct stat statistic = {};
-    if (fstat (fileno (handler), &statistic) < 0) return -1;
-
-    return (long)statistic.st_size;
-}
-#else
-#include <io.h>
-
-#define fileSize(handler)  filelength (fileno (handler))
-#endif
-
 
 typedef struct
 {
@@ -63,6 +46,7 @@ size_t bufFlush (Buffer* buf);
 
 int bufScanf    (Buffer* buf, const char* format, void* dst);
 char bufGetc    (Buffer* buf);
+char bufpeekc   (Buffer* buf);
 
 long long bufSeek (Buffer* buf, long offset, char base);
 long      bufTell (Buffer* buf);

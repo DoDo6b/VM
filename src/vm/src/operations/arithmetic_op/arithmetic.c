@@ -4,9 +4,12 @@ Erracc_t add (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
+    vm->codeseg.rip += sizeof (opcode_t);
+
     if (stackLen (vm->stack) < 2)
     {
-        ErrAcc |= BUF_ERRCODE (VM_MISSINGOPERAND);
+        stackDump (vm->stack);
+        ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
     }
@@ -26,9 +29,11 @@ Erracc_t sub (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
+    vm->codeseg.rip += sizeof (opcode_t);
+
     if (stackLen (vm->stack) < 2)
     {
-        ErrAcc |= BUF_ERRCODE (VM_MISSINGOPERAND);
+        ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
     }
@@ -49,9 +54,11 @@ Erracc_t mul (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
+    vm->codeseg.rip += sizeof (opcode_t);
+
     if (stackLen (vm->stack) < 2)
     {
-        ErrAcc |= BUF_ERRCODE (VM_MISSINGOPERAND);
+        ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
     }
@@ -71,9 +78,11 @@ Erracc_t div (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
+    vm->codeseg.rip += sizeof (opcode_t);
+
     if (stackLen (vm->stack) < 2)
     {
-        ErrAcc |= BUF_ERRCODE (VM_MISSINGOPERAND);
+        ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
     }
@@ -102,9 +111,11 @@ Erracc_t cmp (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
+    vm->codeseg.rip += sizeof (opcode_t);
+
     if (stackLen (vm->stack) < 2)
     {
-        ErrAcc |= BUF_ERRCODE (VM_MISSINGOPERAND);
+        ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
     }

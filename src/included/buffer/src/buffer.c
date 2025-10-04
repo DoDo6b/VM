@@ -253,6 +253,13 @@ char bufGetc (Buffer* buf)
     return c;
 }
 
+char bufpeekc (Buffer* buf)
+{
+    assertStrict (bufVerify (buf, 0) == 0, "buffer failed verification");
+
+    return *buf->bufpos;
+}
+
 long long bufSeek (Buffer* buf, long offset, char base)
 {
     assertStrict (bufVerify (buf, 0) == 0, "buffer failed verification");

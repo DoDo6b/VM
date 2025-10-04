@@ -2,7 +2,7 @@
 #define ARITHMETIC_H
 
 
-#include "../../../vm.h"
+#include "../../vm.h"
 
 
 Erracc_t add (VM* vm);

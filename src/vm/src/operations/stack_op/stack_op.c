@@ -1,60 +1,60 @@
 #include "stack_op.h"
 
-Erracc_t push (opcode_t opcode, Buffer* src, const VM* vm)
+Erracc_t push (VM* vm)
 {
-    assertStrict (src,                          "received NULL");
-    assertStrict (VMVerify (vm) == 0,           "vm corrupted");
-    assertStrict (stackVerify (vm->stack) == 0, "stack corrupted");
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    operand_t operand = 0;
-    opcode_t mod = opcode & UINT8_MAX;
-    pointer_t ramPtr = 0;
+    vm->codeseg.rip += sizeof (opcode_t);
+
+    opcode_t mod = *(const opcode_t*)vm->codeseg.rip;
+    vm->codeseg.rip += sizeof (opcode_t);
 
     switch (mod >> 6)
     {
-        case 0: bufCpy (src, &operand, sizeof (operand_t)); break;
+        case 0: stackPush (vm->stack, vm->codeseg.rip); vm->codeseg.rip += sizeof (operand_t); break;
         case 1:
-            if (mod & 64 <= NUM_REGS) operand = vm->regs[mod & 64];
+            if ((mod & ~(3 << 6)) <= NUM_REGS) stackPush (vm->stack, &vm->regs[mod & ~(3 << 6)]);
             else
             {
-                ErrAcc |= BUF_ERRCODE (VM_BYTECODECORRUPTED);
-                log_err ("translation error", "bytecode corrupted");
+                ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
+                log_err ("translation error", "unknown reg (mod: %c)", mod);
                 return ErrAcc;
             }
             break;
         case 2:
-            bufCpy (src, &ramPtr, sizeof (pointer_t));
-            if (ramPtr >= vm->ram.size)
+            if (*(const pointer_t*)vm->codeseg.rip >= vm->memseg.size)
             {
-                ErrAcc |= BUF_ERRCODE (VM_SEGFAULT);
+                ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
                 log_err ("runtime error", "segfault");
             }
-            operand = vm->ram.data[ramPtr];
+            stackPush (vm->stack, vm->memseg.memory + *(const pointer_t*)vm->codeseg.rip);
             break;
         default:
-            ErrAcc |= BUF_ERRCODE (VM_BYTECODECORRUPTED);
+            ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
             log_err ("translation error", "bytecode corrupted");
             return ErrAcc;
     }
 
-    stackPush (vm->stack, &operand);
-
     return ErrAcc;
 }
 
-void out (const VM* vm)
+void out (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
+
+    vm->codeseg.rip += sizeof (opcode_t);
 
     operand_t valOnTop = 0;
     stackTop (vm->stack, &valOnTop);
  
-    printf ("%d\n", valOnTop);
+    printf ("%lld\n", valOnTop);
 }
 
 void pop (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
+
+    vm->codeseg.rip += sizeof (opcode_t);
 
     stackPop (vm->stack, NULL);
 }

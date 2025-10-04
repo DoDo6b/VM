@@ -2,10 +2,10 @@
 #define REG_OP_H
 
 
-#include "../../../vm.h"
+#include "../../vm.h"
 
 
-Erracc_t mov (opcode_t opcode, VM* vm);
+Erracc_t mov (VM* vm);
 
 
 #endif

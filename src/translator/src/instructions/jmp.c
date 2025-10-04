@@ -4,13 +4,14 @@
 typedef struct
 {
     unsigned long hash;
-    pointer_t jmptr;
+    pointer_t absptr;
 }JMPtag;
 
 typedef struct
 {
     unsigned long hash;
-    pointer_t backjmpptr;
+    opcode_t opcode;
+    pointer_t absBackJMPptr;
 }JMPrequest;
 
 static struct
@@ -41,17 +42,21 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
     }
     hash_t hash = djb2Hash (jmptag, sizeof (jmptag));
 
-    JMPopcode opcode = {
-        .opcode   = JMP << OPCODESHIFT,
-        .jmptag = (pointer_t)(bufW->bufpos - bufW->buffer),
-    };
+
+    pointer_t absPtr = (pointer_t)bufW->bufpos;
 
     for (size_t i = 0; i < JMPTABLE_SIZ; i++)
     {
         if (JMPWaitingList.jmprequests[i].hash == hash)
         {
             char* const bufWpos = bufW->bufpos;
-            bufW->bufpos  = (char*)JMPWaitingList.jmprequests[i].backjmpptr;
+            bufW->bufpos  = (char*)JMPWaitingList.jmprequests[i].absBackJMPptr;
+
+            JMPopcode opcode =
+            {
+                .opcode =                     JMPWaitingList.jmprequests[i].opcode,
+                .offset = (offset_t)(absPtr - JMPWaitingList.jmprequests[i].absBackJMPptr - 1),
+            };
 
             if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
             {
@@ -61,13 +66,13 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
             }
             bufW->bufpos = bufWpos;
 
-            JMPWaitingList.jmprequests[i].hash       = 0;
-            JMPWaitingList.jmprequests[i].backjmpptr = 0;
+            JMPWaitingList.jmprequests[i].hash          = 0;
+            JMPWaitingList.jmprequests[i].absBackJMPptr = 0;
         }
     }
 
     JMPWaitingList.jmptable[JMPWaitingList.jmpTagTotal].hash    = hash;
-    JMPWaitingList.jmptable[JMPWaitingList.jmpTagTotal].jmptr = opcode.jmptag;
+    JMPWaitingList.jmptable[JMPWaitingList.jmpTagTotal].absptr  = absPtr;
     JMPWaitingList.jmpTagTotal++;
 
     if (JMPWaitingList.jmpTagTotal >= JMPTABLE_SIZ)
@@ -88,13 +93,13 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
 
     switch (condition)
     {
-        case JMP_NOCOND: jmpopcode = JMP << OPCODESHIFT; break;
-        case JMP_LESS:   jmpopcode = JL  << OPCODESHIFT; break;
-        case JMP_LEQ:    jmpopcode = JLE << OPCODESHIFT; break;
-        case JMP_NZERO:  jmpopcode = JNZ << OPCODESHIFT; break;
-        case JMP_ZERO:   jmpopcode = JZ  << OPCODESHIFT; break;
-        case JMP_GEQ:    jmpopcode = JGE << OPCODESHIFT; break;
-        case JMP_GRTR:   jmpopcode = JG  << OPCODESHIFT; break;
+        case JMP_NOCOND: jmpopcode = JMP; break;
+        case JMP_LESS:   jmpopcode = JL;  break;
+        case JMP_LEQ:    jmpopcode = JLE; break;
+        case JMP_NZERO:  jmpopcode = JNZ; break;
+        case JMP_ZERO:   jmpopcode = JZ;  break;
+        case JMP_GEQ:    jmpopcode = JGE; break;
+        case JMP_GRTR:   jmpopcode = JG ; break;
         default:
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
             log_err ("internal error", "wrong type of JMP");
@@ -103,7 +108,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
 
     JMPopcode opcode = {
         .opcode   = jmpopcode,
-        .jmptag = 0,
+        .offset = 0,
     };
 
     bufSpaces (bufR);
@@ -127,7 +132,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
     {
         if (JMPWaitingList.jmptable[i].hash == hash)
         {
-            opcode.jmptag = JMPWaitingList.jmptable[i].jmptr;
+            opcode.offset = (offset_t)(JMPWaitingList.jmptable[i].absptr - (pointer_t)bufW->bufpos);
             if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
             {
                 ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
@@ -140,10 +145,11 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
 
     for (size_t i = 0; i < JMPTABLE_SIZ; i++)
     {
-        if (JMPWaitingList.jmprequests[i].hash == 0 && JMPWaitingList.jmprequests[i].backjmpptr == 0)
+        if (JMPWaitingList.jmprequests[i].hash == 0 && JMPWaitingList.jmprequests[i].absBackJMPptr == 0 && JMPWaitingList.jmprequests[i].opcode == 0)
         {
-            JMPWaitingList.jmprequests[i].hash = hash;
-            JMPWaitingList.jmprequests[i].backjmpptr = (pointer_t)bufW->bufpos;
+            JMPWaitingList.jmprequests[i].hash   = hash;
+            JMPWaitingList.jmprequests[i].opcode = jmpopcode;
+            JMPWaitingList.jmprequests[i].absBackJMPptr = (pointer_t)bufW->bufpos;
             break;
         }
     }
@@ -162,7 +168,7 @@ size_t remainingUnprocJMPReq ()
     size_t requests = 0;
     for (size_t i = 0; i < JMPTABLE_SIZ; i++) 
     {
-        if (JMPWaitingList.jmprequests[i].hash != 0 && JMPWaitingList.jmprequests[i].backjmpptr != 0) requests++;
+        if (JMPWaitingList.jmprequests[i].hash != 0 && JMPWaitingList.jmprequests[i].absBackJMPptr != 0) requests++;
     }
     return requests;
 }

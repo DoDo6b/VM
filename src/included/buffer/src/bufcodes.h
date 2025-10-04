@@ -4,7 +4,7 @@
 
 #include "../../Macro.h"
 
-#define BUFEC_SHIFT 16
+#define BUFEC_SHIFT 0
 
 #define BUF_ERRCODE(ec)  BUILD_ERRCODE (ec, BUFEC_SHIFT)
 

@@ -1,5 +1,5 @@
 #include "included/logger/logger.h"
-#include "vm/vm.h"
+#include "vm/run.h"
 #include "translator/translator.h"
 
 #define LOGFILE "stdout"

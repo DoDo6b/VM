@@ -4,7 +4,7 @@
 
 #include "../../included/Macro.h"
 
-#define TRNSLTEC_SHIFT 32
+#define TRNSLTEC_SHIFT 16
 
 #define TRNSLT_ERRCODE(ec)  BUILD_ERRCODE (ec, TRNSLTEC_SHIFT)
 

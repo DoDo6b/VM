@@ -7,7 +7,7 @@ operand_t translateOperand (Buffer* bufR, size_t instrc)
 
     operand_t operand = 0;
 
-    if (!bufScanf (bufR, VALUEFORMAT, &operand))
+    if (bufScanf (bufR, VALUEFORMAT, &operand) == 0)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
         log_srcerr
@@ -47,14 +47,14 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
     hash_t hash = djb2Hash (reg, sizeof (reg));
     switch (hash)
     {
-        CASE_REG (AAX)
-        CASE_REG (ACX)
-        CASE_REG (ADX)
-        CASE_REG (ABX)
-        CASE_REG (ASP)
-        CASE_REG (ABP)
-        CASE_REG (ASI)
-        CASE_REG (ADI)
+        CASE_REG (RAX)
+        CASE_REG (RCX)
+        CASE_REG (RDX)
+        CASE_REG (RBX)
+        CASE_REG (RSP)
+        CASE_REG (RBP)
+        CASE_REG (RSI)
+        CASE_REG (RDI)
 
         default:
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);

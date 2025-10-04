@@ -13,7 +13,6 @@
 #include "../defines/arch.h"
 #include "src/translatorcodes.h"
 #include "src/instructions/instructions.h"
-#include "../vm/vm.h"
 
 
 #define BUFFERSIZE BUFSIZ

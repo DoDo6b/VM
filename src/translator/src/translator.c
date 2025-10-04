@@ -41,12 +41,14 @@ static Erracc_t decomposeSpecial (const char* instr, Buffer* bufR, Buffer* bufW,
     return ErrAcc;
 }
 
-#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode << OPCODESHIFT); break;
+
+#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode); break;
 
 static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
+    assertStrict (instrc, "received NULL");
     
     instruction_t instruction = {0};
 
@@ -76,10 +78,10 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             case JMP_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_NOCOND); break;
             case JNZ_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_NZERO);  break;
             case JZ_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
-            case JL_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
-            case JLE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
-            case JG_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
-            case JGE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
+            case JL_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_LESS);   break;
+            case JLE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_LEQ);    break;
+            case JG_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_GRTR);   break;
+            case JGE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_GEQ);    break;
 
             case PUSH_HASH: writePush (bufW, bufR, *instrc); break;
             
@@ -87,8 +89,6 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         }
         *instrc += 1;
     }
-
-    writeOPcode (bufW, HALT);
 
     if (remainingUnprocJMPReq () != 0)
     {
@@ -99,6 +99,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
     return ErrAcc;
 }
 
+#undef CASE_SIMPLEINSTRUCTION
 
 
 
@@ -144,5 +145,3 @@ uint64_t translate (const char* input, const char* output)
 
     return ErrAcc;
 }
-
-#undef CASE_SIMPLEINSTRUCTION

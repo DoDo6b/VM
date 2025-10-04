@@ -2,13 +2,13 @@
 #define STACKOP_H
 
 
-#include "../../../vm.h"
+#include "../../vm.h"
 
 
-Erracc_t push (opcode_t opcode, Buffer* src, const VM* vm);
+Erracc_t push (VM* vm);
 
-void out (const VM* vm);
-void pop (      VM* vm);
+void out      (VM* vm);
+void pop      (VM* vm);
 
 
 #endif

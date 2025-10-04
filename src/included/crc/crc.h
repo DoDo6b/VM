@@ -7,9 +7,11 @@
 #include "../kassert/kassert.h"
 
 
+typedef uint32_t crc32_t;
+
 void crc32Init ();
 
-uint32_t crc32Calculate (const uint8_t* src, size_t size);
+crc32_t crc32Calculate (const uint8_t* src, size_t size);
 
 
 #endif

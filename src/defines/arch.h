@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #define RTASM_SIGN  0X45A2833
-#define RTASM_VER   0XA000303
+#define RTASM_VER   0XA000503
 
 typedef struct
 {
@@ -16,14 +16,15 @@ typedef struct
 
 
 #define VALUEPREFIX    '#'
-#define VALUEFORMAT    "%d"
+#define VALUEFORMAT    "%lld"
 #define REGISTERPREFIX '%'
 #define REGISTERFORMAT "%s"
 #define RAPREFIX       "[]"
 
+
 enum OP_codes
 {
-    HALT = 0XFF,
+    HALT = 0X66,
 
     OUT   = 0X50,
     POP   = 0X55,
@@ -39,35 +40,44 @@ enum OP_codes
     JGE   = 0X7D,
     JG    = 0X7F,
 
-    CMP  = 0XB0,
+    CMP  = 0X60,
 
-    ADD   = 0XA1,
-    SUB   = 0XA2,
-    MUL   = 0XA3,
-    DIV   = 0XA4,
+    ADD   = 0X01,
+    SUB   = 0X02,
+    MUL   = 0X03,
+    DIV   = 0X04,
 };
 
-#define INSTRUCTIONBUF 16
-typedef char instruction_t[INSTRUCTIONBUF];
+#define INSTRUCTIONBUF 8
+typedef char        instruction_t[INSTRUCTIONBUF];
+typedef uint8_t     opcode_t;
+
 
 enum Registers
 {
-    AAX = 1,
-    ACX = 2,
-    ADX = 3,
-    ABX = 4,
-    ASP = 5,
-    ABP = 6,
-    ASI = 7,
-    ADI = 8,
+    RAX,
+    RCX,
+    RDX,
+    RBX,
+    RSP,
+    RBP,
+    RSI,
+    RDI,
 };
 
 #define NUM_REGS 8
 #define OPCODESHIFT (sizeof (opcode_t) - 1) * 8
 
-typedef uint16_t  opcode_t;
-typedef int32_t   operand_t;
-typedef size_t pointer_t;
+typedef int64_t     operand_t;
+typedef int64_t     offset_t;
+typedef uintptr_t   pointer_t;
 
+
+enum MOD
+{
+    IMM,
+    REG,
+    MEM,
+};
 
 #endif

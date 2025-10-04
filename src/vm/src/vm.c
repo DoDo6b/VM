@@ -1,119 +1,98 @@
-#include "../vm.h"
-#include "operations/arithmetic_op/arithmetic.h"
-#include "operations/stack_op/stack_op.h"
-#include "operations/jmp_op/jmp_op.h"
-#include "operations/reg_op/reg_op.h"
+#include "vm.h"
 
 
-static FILE* fileOpen (const char* fname, const char* attributes)
+VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize)
 {
-    assertStrict (fname,      "received NULL");
-    assertStrict (attributes, "received NULL");
+    assertStrict (bcname, "received NULL");
 
-    FILE* stream = fopen (fname, attributes);
-
-    if (!stream)
+    VM* vm = (VM*)calloc(1, sizeof (VM));
+    if (!vm)
     {
-        ErrAcc |= BUF_ERRCODE (VM_FOPENERR);
-        log_err ("fopen error", "cant open input file: \"%s\"", stream);
+        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
+        log_err ("internal error", "calloc returned NULL");
         return NULL;
     }
 
-    return stream;
+    if (buildCodeseg (&vm->codeseg, bcname))
+    {
+        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
+        log_err ("internal error", "code segment wasnt initialized");
+        return NULL;
+    }
+
+    if (buildRAMseg (&vm->memseg, ramSize))
+    {
+        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
+        log_err ("internal error", "memory segment wasnt initialized");
+        return NULL;
+    }
+    vm->stack = stackInit (stackSize, sizeof (operand_t));
+    if (ErrAcc)
+    {
+        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
+        log_err ("internal error", "stack segment wasnt initialized");
+        return NULL;
+    }
+
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
+
+    return vm;
 }
 
-static Erracc_t headerCmp (const Header* header)
+void VMFree (VM* vm)
 {
-    assertStrict (header, "received NULL");
-
-    if (header->sign    != RTASM_SIGN)
+    if (vm)
     {
-        ErrAcc |= BUF_ERRCODE (VM_BYTECODECORRUPTED);
-        log_err ("error", "bytecode corrupted");
+        freeCodeseg (&vm->codeseg);
+        freeRAMseg  (&vm->memseg);
+        stackFree   ( vm->stack);
+        memset (vm, 0, sizeof (VM));
+        free (vm);
     }
-    if (header->version != RTASM_VER)
-    {
-        ErrAcc |= BUF_ERRCODE (VM_WRONGVERSION);
-        log_err ("error", "incompatible version of rtasm");
-    }
-    return ErrAcc;
 }
 
-static Erracc_t runThread (Buffer* srcBuf, size_t instrc)
+Erracc_t VMVerify (const VM* vm)
 {
-    VM* vm = VMInit (STACKSIZE, RAMSIZE);
-
-    opcode_t opcode = 0;
-
-    bool halt = false;
-    while (!halt)
+    if (vm == NULL)
     {
-        bufCpy (srcBuf, &opcode, sizeof (opcode_t));
-        switch (opcode >> OPCODESHIFT)
-        {
-            case OUT: out (vm); break;
-            case POP: pop (vm); break;
-
-            case CMP: cmp (vm); break;
-            
-            case ADD: add (vm); break;
-            case SUB: sub (vm); break;
-            case MUL: mul (vm); break;
-            case DIV: div (vm); break;
-
-            case PUSH: push (opcode, srcBuf, vm); break;
-            case MOV:  mov  (opcode,         vm); break;
-            
-            case JMP:   jmp (srcBuf, vm);  break;
-            case JNZ:   jnz (srcBuf, vm);  break;
-            case JZ:    jz (srcBuf,  vm);  break;
-            case JL:    jl (srcBuf,  vm);  break;
-            case JG:    jg (srcBuf,  vm);  break;
-            case JLE:   jle (srcBuf,  vm); break;
-            case JGE:   jge (srcBuf,  vm); break;
-
-            case HALT: halt = true; break;
-
-            default:
-                ErrAcc |= BUF_ERRCODE (VM_OPCODENOTFOUND);
-                log_srcerr (
-                    srcBuf->name,
-                    instrc + 1,
-                    "bytecode corruption",
-                    "unknown instruction: \"%0X\"",
-                    opcode >> OPCODESHIFT
-                );
-                VMFree (vm);
-                return ErrAcc;
-        }
+        ErrAcc |= VM_ERRCODE (VM_NULLRECEIVED);
+        log_err ("verification error", "received NULL");
+        return ErrAcc;
     }
-    return ErrAcc;
-}
 
+    bool ax = &vm->rax == &vm->regs[0];
+    bool cx = &vm->rcx == &vm->regs[1];
+    bool dx = &vm->rdx == &vm->regs[2];
+    bool bx = &vm->rbx == &vm->regs[3];
+    bool sp = &vm->rsp == &vm->regs[4];
+    bool bp = &vm->rbp == &vm->regs[5];
+    bool si = &vm->rsi == &vm->regs[6];
+    bool di = &vm->rdi == &vm->regs[7];
 
-Erracc_t run (const char* input)
-{
-    FILE* srcStream = fileOpen (input, "rb");
-    
-    Buffer* srcBuf = bufInit ((size_t)fileSize (srcStream));
-    bufSetStream (srcBuf, input, srcStream, BUFREAD);
-    bufRead (srcBuf, 0);
+    if(!ax | !cx | !dx | !bx | !sp | !bp | !si | !di)
+    {
+        ErrAcc |= VM_ERRCODE (VM_REGMISSADDRESSING);
+        log_err ("verification error", "discrepancy in the addresses");
+    }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-align"
-    const Header* header = (const Header*)srcBuf->bufpos;
-#pragma GCC diagnostic pop
-    bufSeek (srcBuf, sizeof (Header), SEEK_SET);
+    if (codesegVerify (&vm->codeseg))
+    {
+        ErrAcc |= VM_ERRCODE (VM_CODESEGVERIFICATION);
+        log_err ("verification error", "code segment corrupted");
+    }
 
-    if (headerCmp (header)) return ErrAcc;
-    log_string ("<grn>version is compatible<dft>\n");
+    if (RAMsegverify (&vm->memseg))
+    {
+        ErrAcc |= VM_ERRCODE (VM_RAMVERIFICATION);
+        log_err ("verification error", "ram segment corrupted");
+    }
 
-    log_string ("<grn>%llu opcode(s) will be executed<dft>\n", header->instrc);
-
-    if (runThread (srcBuf, header->instrc) == 0) log_string ("<grn>Work is done<dft>\n");
-
-    bufFree (srcBuf);
-    fclose  (srcStream);
+    Erracc_t stackST = stackVerify (vm->stack);
+    if (stackVerify (vm->stack) != 0)
+    {
+        ErrAcc |= VM_ERRCODE (VM_STACKVERIFICATION);
+        log_err ("verification error", "stack failed verification with code: %llu", stackST);
+    }
 
     return ErrAcc;
 }
