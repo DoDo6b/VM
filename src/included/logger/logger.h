@@ -82,7 +82,7 @@ hash_t djb2Hash (const char* hashable, size_t size);
 #include <sys/stat.h>
 inline long fileSize (FILE* handler)
 {
-    assertStrict (handler, "received NULL");
+    assert (handler);
 
     struct stat statistic = {};
     if (fstat (fileno (handler), &statistic) < 0) return -1;

@@ -6,8 +6,10 @@ Erracc_t jmp (VM* vm)
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
     vm->codeseg.rip += sizeof (opcode_t);
-    
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
     offset_t offset = *(const offset_t*)vm->codeseg.rip;
+#pragma GCC diagnostic pop
     vm->codeseg.rip += offset;
 
     if (vm->codeseg.code > vm->codeseg.rip || vm->codeseg.rip > vm->codeseg.code + vm->codeseg.size)

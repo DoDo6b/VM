@@ -9,7 +9,7 @@ static inline void updateT2Hashes (Stack* dst)
     assertStrict (dst->data, "stack wasnt initialized");
 
     dst->crc32Data  = crc32Calculate ((unsigned char*)dst->data, dst->capacity * dst->sizeOfElem);
-    dst->crc32      = crc32Calculate ((unsigned char*)dst, &dst->crc32 - &dst->frontCanary);
+    dst->crc32      = crc32Calculate ((unsigned char*)dst, (size_t)(&dst->crc32 - &dst->frontCanary));
 }
 )
 
@@ -80,13 +80,13 @@ void stackReallocD (Stack* stack, size_t newCapacity, bool ignoreDataLoss)
 
     if (stack->capacity == newCapacity) return;
 
-    assertStrict (newCapacity > stack->capacity ||  ignoreDataLoss || (stack->top - stack->data) / stack->sizeOfElem < newCapacity, "data loss");
-    if (          newCapacity < stack->capacity && !ignoreDataLoss && (stack->top - stack->data) / stack->sizeOfElem > newCapacity) return;
+    assertStrict (newCapacity > stack->capacity ||  ignoreDataLoss || (size_t)(stack->top - stack->data) / stack->sizeOfElem < newCapacity, "data loss");
+    if (          newCapacity < stack->capacity && !ignoreDataLoss && (size_t)(stack->top - stack->data) / stack->sizeOfElem > newCapacity) return;
 
     size_t reservedMemory = 0 T1 ( + 2 * sizeof (uintptr_t) + newCapacity * stack->sizeOfElem % sizeof (uintptr_t) );
 
     size_t newSize        = newCapacity * stack->sizeOfElem + reservedMemory;
-    size_t topOffset      = stack->top - stack->data;
+    size_t topOffset      = (size_t)(stack->top - stack->data);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
@@ -180,7 +180,7 @@ T2(     updateT2Hashes (stack); )
 size_t stackLenD (const Stack* stack)
 {
     assertStrict (stackVerifyD (stack) == 0, "verification failed, cant continue");
-    return (stack->top - stack->data) / stack->sizeOfElem;
+    return (size_t)(stack->top - stack->data) / stack->sizeOfElem;
 }
 
 
@@ -285,7 +285,7 @@ T1  (
         return ErrAcc;
     }
 
-    if (stack->top < stack->data || stack->top > stack->data + stack->capacity * stack->sizeOfElem || (stack->top - stack->data) % stack->sizeOfElem != 0)
+    if (stack->top < stack->data || stack->top > stack->data + stack->capacity * stack->sizeOfElem || (size_t)(stack->top - stack->data) % stack->sizeOfElem != 0)
     {
         log_string
         (
@@ -298,7 +298,7 @@ T1  (
     }
 
 T2  ( 
-    if (stack->crc32 != crc32Calculate ((const unsigned char*)stack, &stack->crc32 - &stack->frontCanary))
+    if (stack->crc32 != crc32Calculate ((const unsigned char*)stack, (size_t)(&stack->crc32 - &stack->frontCanary)))
     {
         log_string
         (

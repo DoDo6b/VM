@@ -68,6 +68,7 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
 
             JMPWaitingList.jmprequests[i].hash          = 0;
             JMPWaitingList.jmprequests[i].absBackJMPptr = 0;
+            JMPWaitingList.jmpRequestsTotal--;
         }
     }
 
@@ -143,6 +144,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
         }
     }
 
+    bool overflow = true;
     for (size_t i = 0; i < JMPTABLE_SIZ; i++)
     {
         if (JMPWaitingList.jmprequests[i].hash == 0 && JMPWaitingList.jmprequests[i].absBackJMPptr == 0 && JMPWaitingList.jmprequests[i].opcode == 0)
@@ -150,8 +152,17 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
             JMPWaitingList.jmprequests[i].hash   = hash;
             JMPWaitingList.jmprequests[i].opcode = jmpopcode;
             JMPWaitingList.jmprequests[i].absBackJMPptr = (pointer_t)bufW->bufpos;
+            JMPWaitingList.jmpRequestsTotal++;
+            overflow = false;
             break;
         }
+    }
+    
+    if (overflow)
+    {
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFOVERFLOW);
+        log_err ("buffer overflow", "cant write jmptag into buffer");
+        return ErrAcc;
     }
 
     if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)

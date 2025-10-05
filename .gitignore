@@ -1,4 +1,5 @@
-rtasm
+translate
+vm
 *.rtasm
 *.rtout
 

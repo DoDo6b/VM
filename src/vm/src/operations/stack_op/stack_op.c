@@ -22,12 +22,18 @@ Erracc_t push (VM* vm)
             }
             break;
         case MEM:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
             if (*(const pointer_t*)vm->codeseg.rip >= vm->memseg.size)
+#pragma GCC diagnostic pop
             {
                 ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
                 log_err ("runtime error", "segfault");
             }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
             stackPush (vm->stack, vm->memseg.memory + *(const pointer_t*)vm->codeseg.rip);
+#pragma GCC diagnostic pop
             vm->codeseg.rip += sizeof (pointer_t);
             break;
         default:

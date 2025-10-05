@@ -63,7 +63,8 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
                 bufR->name,
                 instrc + 1,
                 "syntax error",
-                "unknown register (hash: %lu)",
+                "unknown register (reg: %s, hash: %lu)",
+                reg,
                 hash
             );
             exit (EXIT_FAILURE);

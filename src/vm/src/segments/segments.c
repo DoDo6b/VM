@@ -6,12 +6,14 @@ static Erracc_t headerCmp (FILE* stream)
     assertStrict (stream, "received NULL");
 
     Header header = {};
+    fseek (stream, 0, SEEK_SET);
     fread (&header, sizeof (Header), 1, stream);
 
     if (header.sign    != RTASM_SIGN)
     {
+        printf ("%0llX\n", header.sign);
         ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-        log_err ("error", "bytecode corrupted");
+        log_err ("error", "header sign corrupted");
     }
     if (header.version != RTASM_VER)
     {

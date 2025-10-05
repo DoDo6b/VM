@@ -35,7 +35,8 @@ static Erracc_t decomposeSpecial (const char* instr, Buffer* bufR, Buffer* bufW,
         bufR->name ? bufR->name : "*fname*",
         instrc + 1,
         "syntax error",
-        "unknown instruction (hash: %lu)",
+        "unknown instruction (instr: %s hash: %lu)",
+        instr,
         djb2Hash (instr, sizeof (instruction_t))
     );
     return ErrAcc;
@@ -88,6 +89,12 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             default:  decomposeSpecial (instruction, bufR, bufW, *instrc);
         }
         *instrc += 1;
+
+        if (ErrAcc)
+        {
+            log_err ("runtime error", "aborting");
+            break;
+        }
     }
 
     if (remainingUnprocJMPReq () != 0)
