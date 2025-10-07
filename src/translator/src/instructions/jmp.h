@@ -9,7 +9,6 @@
 #include "../../../defines/arch.h"
 #include "../translatorcodes.h"
 #include "operands/operands.h"
-#include "instructions.h"
 
 
 typedef struct __attribute__((packed))

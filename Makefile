@@ -7,15 +7,26 @@ CFLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equ
          -D_EJUDGE_CLIENT_SIDE
 
 BUILD_DIR = src\build
-TARGET = rtasm.exe
 
-SRCS = $(shell for /r src %%i in (*.c) do echo %%i)
-OBJS = $(SRCS:src/%.c=$(BUILD_DIR)/%.o)
+TRANSLATE_TARGET = translate.exe
+VM_TARGET = vm.exe
 
-all: $(TARGET)
+COMMON_SRCS = $(shell for /r src\included %%i in (*.c) do @echo %%i) \
+              $(shell for /r src\defines %%i in (*.c) do @echo %%i)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS)
+TRANSLATE_SRCS = $(shell for /r src\translator %%i in (*.c) do @echo %%i)
+VM_SRCS        = $(shell for /r src\vm %%i in (*.c) do @echo %%i)
+
+TRANSLATE_OBJS = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(TRANSLATE_SRCS:src/%.c=$(BUILD_DIR)/%.o)
+VM_OBJS        = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(VM_SRCS:src/%.c=$(BUILD_DIR)/%.o)
+
+all: $(TRANSLATE_TARGET) $(VM_TARGET)
+
+$(TRANSLATE_TARGET): $(TRANSLATE_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(TRANSLATE_OBJS)
+
+$(VM_TARGET): $(VM_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(VM_OBJS)
 
 $(BUILD_DIR)/%.o: src/%.c
 	@if not exist $(@D) mkdir $(@D)
@@ -23,7 +34,8 @@ $(BUILD_DIR)/%.o: src/%.c
 
 clean:
 	if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)
-	if exist $(TARGET) del $(TARGET)
+	if exist $(TRANSLATE_TARGET) del $(TRANSLATE_TARGET)
+	if exist $(VM_TARGET) del $(VM_TARGET)
 
 rebuild: clean all
 

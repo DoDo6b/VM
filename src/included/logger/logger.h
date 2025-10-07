@@ -73,6 +73,8 @@ const char* get_log();
 
 void memDump (const void* pointer, size_t byteSize);
 
+void memBlockDump (const void* pointer, size_t size, size_t width);
+
 typedef unsigned long hash_t;
 
 hash_t djb2Hash (const char* hashable, size_t size);

@@ -26,6 +26,7 @@ Erracc_t buildCodeseg (CodeSeg* dst, const char* bcname);
 void     freeCodeseg  (CodeSeg* dst);
 
 Erracc_t codesegVerify (const CodeSeg* seg);
+Erracc_t codesegDump   (const CodeSeg* seg);
 
 
 typedef struct
@@ -38,6 +39,7 @@ Erracc_t buildRAMseg (RAMseg* dst, size_t size);
 void     freeRAMseg  (RAMseg* dst);
 
 Erracc_t RAMsegverify   (const RAMseg* seg);
+Erracc_t RAMdump        (const RAMseg* seg);
 
 
 #endif

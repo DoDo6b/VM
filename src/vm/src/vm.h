@@ -12,7 +12,7 @@
 #include "../../included/stack/stack.h"
 
 #define STACKSIZE 16
-#define RAMSIZE 4096
+#define RAMSIZE 1024
 
 
 typedef struct
@@ -48,6 +48,7 @@ VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize);
 void VMFree (VM* vm);
 
 Erracc_t VMVerify (const VM* vm);
+Erracc_t VMdump   (const VM* vm);
 
 
 #endif

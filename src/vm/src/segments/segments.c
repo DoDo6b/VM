@@ -11,14 +11,13 @@ static Erracc_t headerCmp (FILE* stream)
 
     if (header.sign    != RTASM_SIGN)
     {
-        printf ("%0llX\n", header.sign);
         ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-        log_err ("error", "header sign corrupted");
+        log_err ("error", "header sign corrupted: %0llX", header.sign);
     }
     if (header.version != RTASM_VER)
     {
         ErrAcc |= VM_ERRCODE (VM_WRONGVERSION);
-        log_err ("error", "incompatible version of rtasm");
+        log_err ("error", "incompatible version of rtasm: %0llX (current: %0llX)", header.version, RTASM_VER);
     }
     return ErrAcc;
 }
@@ -98,7 +97,7 @@ Erracc_t codesegVerify (const CodeSeg* seg)
     if (seg->code > seg->rip || seg->rip > seg->code + seg->size)
     {
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
-        log_err ("verification error", "rip is out of segment");
+        log_err ("verification error", "rip is out of segment (%p : <red> %p <dft> : %p)", seg->code, seg->rip, seg->code + seg->size);
     }
 
 IF_DBG
@@ -106,9 +105,48 @@ IF_DBG
     if (seg->hash != crc32Calculate ((const uint8_t*)seg->code, seg->size))
     {
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
-        log_err ("verification error", "code segment is read only");
+        log_err ("verification error", "code segment hash is different");
     }
 )
+
+    return ErrAcc;
+}
+
+Erracc_t codesegDump (const CodeSeg* seg)
+{
+    assertStrict (codesegVerify (seg) == 0, "code segment corrupted");
+    log_string ("<blu>code section(segment) dump:<dft>\n");
+    log_string
+    (
+        "segment start:     0x%p\n"
+        "segment size:      %zu\n"
+        "segment end:       0x%p\n"
+IF_DBG( "segment checksum:  0x%p\n"),
+        seg->code,
+        seg->size,
+        seg->code + seg->size
+IF_DBG(,seg->hash)
+    );
+
+    log_string ("rip:               0x%p\n{\n", seg->rip);
+    const char* dumpStart = seg->rip > seg->code + 5 ? seg->rip - 5 : seg->code;
+    size_t dumpSize = seg->size > 10 ? 10 : seg->size;
+    
+    log_string ("<blk>  ");
+    size_t i = 0;
+    for (; i < (size_t)(seg->rip - dumpStart) && i < dumpSize; i++) log_string ("%02zX ", i);
+    log_string ("<dft><mgn>%02zX<dft><blk> ", i++);
+    for (; i < dumpSize; i++) log_string ("%02zX ", i);
+
+    log_string ("<dft>\n  <cyn>");
+    for (i = 0; i < (size_t)(seg->rip - dumpStart) && i < dumpSize; i++) log_string ("%02hhX ", *(dumpStart+i));
+    log_string ("<dft><mgn>%02hhX<dft><cyn> ", *(dumpStart+i++));
+    for (; i < dumpSize; i++) log_string ("%02hhX ", *(dumpStart+i));
+    log_string ("<dft>\n}\n");
+
+    log_string ("<blk>dump:<dft>\n");
+    memBlockDump (seg->code, seg->size, 16);
+
     return ErrAcc;
 }
 
@@ -157,6 +195,27 @@ Erracc_t RAMsegverify (const RAMseg* seg)
         ErrAcc |= VM_ERRCODE (VM_NULLRECEIVED);
         log_err ("verification error", "memory wasnt initialized");
     }
+
+    return ErrAcc;
+}
+
+Erracc_t RAMdump (const RAMseg* seg)
+{
+    assertStrict (RAMsegverify (seg) == 0, "RAM corrupted");
+
+    log_string ("<blu>RAM dump:<dft>\n");
+    log_string 
+    (
+        "segment start: 0x%p\n"
+        "segment size:  %zu\n"
+        "segment end:   0x%p\n",
+        seg->memory,
+        seg->size,
+        seg->memory + seg->size
+    );
+
+    log_string ("<blk>RAM dump:<dft>\n");
+    memBlockDump (seg->memory, seg->size, 16);
 
     return ErrAcc;
 }

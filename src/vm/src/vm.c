@@ -41,6 +41,8 @@ VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize)
 
 void VMFree (VM* vm)
 {
+    VMdump (vm);
+
     if (vm)
     {
         freeCodeseg (&vm->codeseg);
@@ -93,6 +95,42 @@ Erracc_t VMVerify (const VM* vm)
         ErrAcc |= VM_ERRCODE (VM_STACKVERIFICATION);
         log_err ("verification error", "stack failed verification with code: %llu", stackST);
     }
+
+    return ErrAcc;
+}
+
+Erracc_t VMdump (const VM* vm)
+{
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
+
+    log_string ("<blu><b>Virtual Machine dump:</b><dft>\n");
+
+    log_string
+    (
+        "<blu>gp registers:<dft>\n{\n"
+        "  rax: %lld\n"
+        "  rcx: %lld\n"
+        "  rdx: %lld\n"
+        "  rbx: %lld\n"
+        "  rsp: %lld\n"
+        "  rbp: %lld\n"
+        "  rsi: %lld\n"
+        "  rdi: %lld\n"
+        "}\n",
+        vm->rax,
+        vm->rcx,
+        vm->rdx,
+        vm->rbx,
+        vm->rsp,
+        vm->rbp,
+        vm->rsi,
+        vm->rdi
+    );
+    log_string ("rflags: %lld\n", vm->rflags);
+
+    codesegDump (&vm->codeseg);
+    stackDump   (vm->stack);
+    RAMdump     (&vm->memseg);
 
     return ErrAcc;
 }

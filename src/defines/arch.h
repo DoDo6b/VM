@@ -2,6 +2,7 @@
 #define ARCH_H
 
 
+#include <stdlib.h>
 #include <stdint.h>
 
 #define RTASM_SIGN  0X45A2833

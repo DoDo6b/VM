@@ -43,14 +43,14 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
     hash_t hash = djb2Hash (jmptag, sizeof (jmptag));
 
 
-    pointer_t absPtr = (pointer_t)bufW->bufpos;
+    pointer_t absPtr = (pointer_t)(bufW->bufpos - bufW->buffer);
 
     for (size_t i = 0; i < JMPTABLE_SIZ; i++)
     {
         if (JMPWaitingList.jmprequests[i].hash == hash)
         {
             char* const bufWpos = bufW->bufpos;
-            bufW->bufpos  = (char*)JMPWaitingList.jmprequests[i].absBackJMPptr;
+            bufW->bufpos  = JMPWaitingList.jmprequests[i].absBackJMPptr + bufW->buffer;
 
             JMPopcode opcode =
             {
@@ -133,7 +133,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
     {
         if (JMPWaitingList.jmptable[i].hash == hash)
         {
-            opcode.offset = (offset_t)(JMPWaitingList.jmptable[i].absptr - (pointer_t)bufW->bufpos - 1);
+            opcode.offset = (offset_t)(JMPWaitingList.jmptable[i].absptr - (pointer_t)(bufW->bufpos - bufW->buffer) - 1);
             if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
             {
                 ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
@@ -151,7 +151,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
         {
             JMPWaitingList.jmprequests[i].hash   = hash;
             JMPWaitingList.jmprequests[i].opcode = jmpopcode;
-            JMPWaitingList.jmprequests[i].absBackJMPptr = (pointer_t)bufW->bufpos;
+            JMPWaitingList.jmprequests[i].absBackJMPptr = (pointer_t)(bufW->bufpos - bufW->buffer);
             JMPWaitingList.jmpRequestsTotal++;
             overflow = false;
             break;

@@ -1,5 +1,5 @@
-translate
-vm
+translate.exe
+vm.exe
 *.rtasm
 *.rtout
 
