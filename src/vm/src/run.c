@@ -53,6 +53,7 @@ static Erracc_t runThread (const char* bcname)
                     "unknown instruction: \"%0X\"",
                     *vm->codeseg.rip
                 );
+                VMdump (vm);
                 VMFree (vm);
                 return ErrAcc;
         }

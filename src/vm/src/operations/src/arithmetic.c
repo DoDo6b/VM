@@ -8,6 +8,7 @@ Erracc_t add (VM* vm)
 
     if (stackLen (vm->stack) < 2)
     {
+        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
@@ -32,6 +33,7 @@ Erracc_t sub (VM* vm)
 
     if (stackLen (vm->stack) < 2)
     {
+        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
@@ -57,6 +59,7 @@ Erracc_t mul (VM* vm)
 
     if (stackLen (vm->stack) < 2)
     {
+        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
@@ -81,6 +84,7 @@ Erracc_t div (VM* vm)
 
     if (stackLen (vm->stack) < 2)
     {
+        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;
@@ -114,6 +118,7 @@ Erracc_t cmp (VM* vm)
 
     if (stackLen (vm->stack) < 2)
     {
+        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_MISSINGOPERAND);
         log_err ("runtime error", "missing operand");
         return ErrAcc;

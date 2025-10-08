@@ -90,6 +90,7 @@ Erracc_t mov (VM* vm)
 
 
         default:
+            VMdump (vm);
             ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
             log_err ("translation error", "bytecode corrupted");
             return ErrAcc;

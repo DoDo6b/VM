@@ -124,7 +124,9 @@ Erracc_t VMdump (const VM* vm)
         vm->rsi,
         vm->rdi
     );
-    log_string ("rflags: %lld\n", vm->rflags);
+    log_string ("rflags: ");
+    for (size_t i = 0; i < sizeof (vm->rflags) * 8; i++) log_string ("%d", (vm->rflags >> i) & 1ULL);
+    log_string ("\n");
 
     codesegDump (&vm->codeseg);
     stackDump   (vm->stack);
