@@ -1,8 +1,5 @@
 #include "vm.h"
-#include "operations/arithmetic_op/arithmetic.h"
-#include "operations/stack_op/stack_op.h"
-#include "operations/jmp_op/jmp_op.h"
-#include "operations/reg_op/reg_op.h"
+#include "operations/operations.h"
 
 #include "../run.h"
 
@@ -63,6 +60,7 @@ static Erracc_t runThread (const char* bcname)
         if (ErrAcc)
         {
             log_err ("runtime error", "aborting");
+            VMdump (vm);
             break;
         }
     }

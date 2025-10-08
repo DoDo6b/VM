@@ -27,6 +27,22 @@ static struct
     .jmprequests      = {},
 };
 
+Erracc_t jmpWLdump ()
+{
+    log_string ("<blu><b>jmp waiting list dump:</b><dft>\n");
+
+    log_string ("<blu>jmp tag list dump(%llu in total):<dft>\n{\n", JMPWaitingList.jmpTagTotal);
+    for (size_t i = 0; i < JMPWaitingList.jmpTagTotal; i++) log_string ("  %lu: <cyn>0x%p<dft>\n", JMPWaitingList.jmptable[i].hash, JMPWaitingList.jmptable[i].absptr);
+    log_string ("}\n");
+
+    log_string ("<blu>jmp requests list dump(%llu in total):<dft>\n{\n", JMPWaitingList.jmpRequestsTotal);
+    for (size_t i = 0; i < JMPTABLE_SIZ; i++) if (JMPWaitingList.jmprequests[i].opcode != 0) log_string ("  %lu: <grn>%0X<dft> <cyn>0x%p<dft>\n", JMPWaitingList.jmprequests[i].hash, JMPWaitingList.jmprequests[i].opcode, JMPWaitingList.jmptable[i].absptr);
+    log_string ("}\n");
+
+    return ErrAcc;
+}
+
+
 Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
 {
     assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");

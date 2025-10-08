@@ -1,4 +1,4 @@
-#include "jmp_op.h"
+#include "../operations.h"
 
 
 Erracc_t jmp (VM* vm)
@@ -23,11 +23,14 @@ Erracc_t jmp (VM* vm)
     return ErrAcc;
 }
 
+#define VMZF  ((vm->rflags >> 6) & 1ULL)
+#define VMCF  ( vm->rflags       & 1ULL)
+
 Erracc_t jnz (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    if (!vm->zf) jmp (vm);
+    if (!VMZF) jmp (vm);
     else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
     return ErrAcc;
 }
@@ -36,7 +39,7 @@ Erracc_t jz (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
     
-    if (vm->zf) jmp (vm);
+    if (VMZF) jmp (vm);
     else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
     return ErrAcc;
 }
@@ -45,7 +48,7 @@ Erracc_t jl (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
     
-    if (!vm->zf && vm->cf) jmp (vm);
+    if (!VMZF && VMCF) jmp (vm);
     else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
     return ErrAcc;
 }
@@ -54,7 +57,7 @@ Erracc_t jg (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
     
-    if (!vm->zf && !vm->cf) jmp (vm);
+    if (!VMZF && !VMCF) jmp (vm);
     else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
     return ErrAcc;
 }
@@ -62,7 +65,7 @@ Erracc_t jg (VM* vm)
 Erracc_t jle (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
-    if (vm->zf || vm->cf) jmp (vm);
+    if (VMZF || VMCF) jmp (vm);
     else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
     return ErrAcc;
 }
@@ -71,7 +74,7 @@ Erracc_t jge (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
     
-    if (vm->zf || !vm->cf) jmp (vm);
+    if (VMZF || !VMCF) jmp (vm);
     else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
     return ErrAcc;
 }

@@ -12,7 +12,7 @@
 #include "../../included/stack/stack.h"
 
 #define STACKSIZE 16
-#define RAMSIZE 1024
+#define RAMSIZE 512
 
 
 typedef struct
@@ -38,9 +38,6 @@ typedef struct
         operand_t regs[NUM_REGS];
     };
     uint64_t rflags;
-
-    bool zf;    //would be deprecated soon
-    bool cf;
 }VM;
 
 VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize);

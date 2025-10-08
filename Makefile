@@ -32,6 +32,9 @@ $(BUILD_DIR)/%.o: src/%.c
 	@if not exist $(@D) mkdir $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+translate: $(TRANSLATE_TARGET)
+vm: $(VM_TARGET)
+
 clean:
 	if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)
 	if exist $(TRANSLATE_TARGET) del $(TRANSLATE_TARGET)

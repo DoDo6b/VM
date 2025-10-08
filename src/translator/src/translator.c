@@ -99,6 +99,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 
     if (remainingUnprocJMPReq () != 0)
     {
+        jmpWLdump ();
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
         log_err ("syntax error", "missing jmptags");
     }

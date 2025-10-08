@@ -41,8 +41,6 @@ VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize)
 
 void VMFree (VM* vm)
 {
-    VMdump (vm);
-
     if (vm)
     {
         freeCodeseg (&vm->codeseg);

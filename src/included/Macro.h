@@ -17,7 +17,7 @@
 #endif
 
 // turn something off
-#define OFF if(0)
+//#define OFF if(0)
 
 /* constructs module errcode: 0...01...10...0
                                    ^   ^

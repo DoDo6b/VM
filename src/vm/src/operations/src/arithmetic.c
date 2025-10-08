@@ -1,4 +1,4 @@
-#include "arithmetic.h"
+#include "../operations.h"
 
 Erracc_t add (VM* vm)
 {
@@ -124,8 +124,10 @@ Erracc_t cmp (VM* vm)
     stackPop (vm->stack, &operandR);
     stackPop (vm->stack, &operandL);
 
-    vm->zf = operandL == operandR;
-    vm->cf = operandL  < operandR;
+    if (operandL == operandR) vm->rflags |=   1ULL << 6;
+    else                      vm->rflags &= ~(1ULL << 6);
+    if (operandL  < operandR) vm->rflags |=   1ULL;
+    else                      vm->rflags &=  ~1ULL;
 
     return ErrAcc;
 }

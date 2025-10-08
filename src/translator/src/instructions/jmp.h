@@ -35,6 +35,7 @@ typedef enum
 Erracc_t decomposeChpoint (const char* str, Buffer* bufW);
 Erracc_t decomposeJMP     (Buffer* bufR,    Buffer* bufW, size_t instrC, JMPCOND condition);
 
+Erracc_t jmpWLdump ();
 size_t remainingUnprocJMPReq ();
 
 

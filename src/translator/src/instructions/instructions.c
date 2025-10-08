@@ -29,7 +29,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
     if (isalpha ((unsigned char)ch))
     {
         mod = REG << 6;
-        mod += translateReg(bufR, instrc);
+        mod += (opcode_t)(translateReg(bufR, instrc) << 3);
         writeOPcode (bufW, mod);
     }
     else if (isdigit ((int)ch))

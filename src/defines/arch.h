@@ -76,9 +76,11 @@ typedef uintptr_t   pointer_t;
 
 enum MOD
 {
-    IMM,
-    REG,
     MEM,
+    IMM,
+    OFF,
+    REG,
 };
+#define DISP64 5
 
 #endif
