@@ -207,7 +207,7 @@ size_t bufWrite (Buffer* buf, void* src, size_t size)
 }
 
 
-int bufScanf (Buffer* buf, const char* format, void* dst)
+size_t bufScanf (Buffer* buf, const char* format, void* dst)
 {
     assertStrict (bufVerify (buf, 0) == 0, "failed buffer verification");
     assertStrict (buf->mode == BUFREAD, "incompatible buffer mode");
@@ -222,18 +222,18 @@ int bufScanf (Buffer* buf, const char* format, void* dst)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
-    int scanned = sscanf (buf->bufpos, newFormat, dst, &read);
+    sscanf (buf->bufpos, newFormat, dst, &read);
 #pragma GCC diagnostic pop
     
     if (buf->bufpos + read > buf->buffer + buf->size)
     {
         ErrAcc |= BUF_ERRCODE (BUFOVERFLOW);
         log_err ("runtime error", "buffer position pointer is out of bounds");
-        return -1;
+        return 0;
     }
     buf->bufpos += read;
 
-    return scanned;
+    return read;
 }
 
 void bufSpaces (Buffer* buf)

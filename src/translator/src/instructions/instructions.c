@@ -46,33 +46,46 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
     }
     else if (ch == '[')
     {
-        bufSeek (bufR, 1, SEEK_CUR);
-        mod = MEM << 6;
-        writeOPcode (bufW, mod);
+        offset_t offset = 0;
+        opcode_t reg    = UINT8_MAX;
+        decomposeMemcall (bufR, &reg, &offset, instrc);
 
-        pointer_t ptr = 0;
-
-        char* endptr = NULL;
-        ptr = (pointer_t)strtoumax(bufR->bufpos, &endptr, 16);
-
-        if (!endptr || *endptr != ']')
+        if (reg == UINT8_MAX)
         {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-            log_srcerr
-            (
-                bufR->name,
-                instrc,
-                "syntax error",
-                "no closing bracets ]"
-            );
+            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
+            log_err ("internal error", "cant decompose bracets");
             return ErrAcc;
         }
-        bufR->bufpos = endptr + 1;
 
-        if (bufWrite (bufW, &ptr, sizeof (pointer_t)) == 0)
+        if (reg != DISP64 && offset)
         {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-            log_err ("writing error", "cant write into buffer");
+            mod = (OFF << 6) | (opcode_t)((reg & 0x07) << 3);
+            writeOPcode (bufW, mod);
+
+            if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
+            {
+                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
+                log_err ("writing error", "cant write into buffer");
+                return ErrAcc;
+            }
+
+            return ErrAcc;
+        }
+        else
+        {
+            mod = (MEM << 6) | (opcode_t)((reg & 0x07) << 3);
+            writeOPcode (bufW, mod);
+
+            if (offset && reg == DISP64)
+            {
+                if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
+                {
+                    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
+                    log_err ("writing error", "cant write into buffer");
+                    return ErrAcc;
+                }
+            }
+
             return ErrAcc;
         }
     }
@@ -104,34 +117,46 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
 
     if (bufpeekc (bufR) == '[')
     {
-        bufSeek (bufR, 1, SEEK_CUR);
+        offset_t offset = 0;
+        opcode_t reg    = UINT8_MAX;
+        decomposeMemcall (bufR, &reg, &offset, instrc);
 
-        mod = MEM << 6;
-        writeOPcode (bufW, mod);
-
-        pointer_t ptr = 0;
-
-        char* endptr = NULL;
-        ptr = (pointer_t)strtoumax(bufR->bufpos, &endptr, 16);
-
-        if (!endptr || *endptr != ']')
+        if (reg == UINT8_MAX)
         {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-            log_srcerr
-            (
-                bufR->name,
-                instrc,
-                "syntax error",
-                "no closing bracets ]"
-            );
+            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
+            log_err ("internal error", "cant decompose bracets");
             return ErrAcc;
         }
-        bufR->bufpos = endptr+1;
 
-        if (bufWrite (bufW, &ptr, sizeof (pointer_t)) == 0)
+        if (reg != DISP64 && offset)
         {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-            log_err ("writing error", "cant write into buffer");
+            mod = (OFF << 6) | (reg & 0x07);
+            writeOPcode (bufW, mod);
+
+            if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
+            {
+                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
+                log_err ("writing error", "cant write into buffer");
+                return ErrAcc;
+            }
+
+            return ErrAcc;
+        }
+        else
+        {
+            mod = (MEM << 6) | (reg & 0x07);
+            writeOPcode (bufW, mod);
+
+            if (offset && reg == DISP64)
+            {
+                if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
+                {
+                    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
+                    log_err ("writing error", "cant write into buffer");
+                    return ErrAcc;
+                }
+            }
+
             return ErrAcc;
         }
     }

@@ -44,9 +44,9 @@ size_t bufRead  (Buffer* buf, size_t size);
 size_t bufWrite (Buffer* buf, void* src, size_t size); 
 size_t bufFlush (Buffer* buf);
 
-int bufScanf    (Buffer* buf, const char* format, void* dst);
-char bufGetc    (Buffer* buf);
-char bufpeekc   (Buffer* buf);
+size_t bufScanf    (Buffer* buf, const char* format, void* dst);
+char   bufGetc    (Buffer* buf);
+char   bufpeekc   (Buffer* buf);
 
 long long bufSeek (Buffer* buf, long offset, char base);
 long      bufTell (Buffer* buf);

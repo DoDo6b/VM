@@ -10,7 +10,7 @@ Erracc_t mov (VM* vm)
     opcode_t mod = *(const opcode_t*)vm->codeseg.rip;
     vm->codeseg.rip += sizeof (opcode_t);
 
-    pointer_t ptr = -1;
+    pointer_t ptr = UINT64_MAX;
 
     switch (mod >> 6)
     {
