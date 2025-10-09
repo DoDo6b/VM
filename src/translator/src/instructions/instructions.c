@@ -11,6 +11,7 @@ Erracc_t writeOPcode (Buffer* bufW, opcode_t opcode)
         log_err ("writing error", "cant write into buffer");
         IMSTP ( exit (EXIT_FAILURE); )
     }
+    log_string ("has wrote: %0X\n", opcode);
     return ErrAcc;
 }
 
@@ -46,7 +47,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
     }
     else if (ch == '[')
     {
-        offset_t offset = 0;
+        offset_t offset = INT64_MIN;
         opcode_t reg    = UINT8_MAX;
         decomposeMemcall (bufR, &reg, &offset, instrc);
 
@@ -57,7 +58,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
             return ErrAcc;
         }
 
-        if (reg != DISP64 && offset)
+        if (reg != DISP64 && offset != INT64_MIN)
         {
             mod = (OFF << 6) | (opcode_t)((reg & 0x07) << 3);
             writeOPcode (bufW, mod);
@@ -76,7 +77,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
             mod = (MEM << 6) | (opcode_t)((reg & 0x07) << 3);
             writeOPcode (bufW, mod);
 
-            if (offset && reg == DISP64)
+            if (offset != INT64_MIN && reg == DISP64)
             {
                 if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
                 {
@@ -117,7 +118,7 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
 
     if (bufpeekc (bufR) == '[')
     {
-        offset_t offset = 0;
+        offset_t offset = INT64_MIN;
         opcode_t reg    = UINT8_MAX;
         decomposeMemcall (bufR, &reg, &offset, instrc);
 
@@ -128,7 +129,7 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
             return ErrAcc;
         }
 
-        if (reg != DISP64 && offset)
+        if (reg != DISP64 && offset != INT64_MIN)
         {
             mod = (OFF << 6) | (reg & 0x07);
             writeOPcode (bufW, mod);
@@ -147,7 +148,7 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
             mod = (MEM << 6) | (reg & 0x07);
             writeOPcode (bufW, mod);
 
-            if (offset && reg == DISP64)
+            if (offset != INT64_MIN && reg == DISP64)
             {
                 if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
                 {

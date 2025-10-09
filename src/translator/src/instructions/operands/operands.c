@@ -103,6 +103,9 @@ Erracc_t decomposeMemcall (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t
     assertStrict (reg,    "received NULL");
     assertStrict (offset, "received NULL");
 
+    *reg    = UINT8_MAX;
+    *offset = INT64_MIN;
+
     char str[32] = {0};
     size_t size = bufScanf (bufR, "[%31[^]]", str);
     if (size == 0 || bufGetc (bufR) != ']')
@@ -129,7 +132,7 @@ Erracc_t decomposeMemcall (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t
         if (isdigit (str[i]))
         {
             char* nexttoken = NULL;
-            *offset = strtoll (&str[i], &nexttoken, 16);
+            *offset = strtoll (&str[i], &nexttoken, 10);
             i = (size_t)(nexttoken - str - 1);
         }
 

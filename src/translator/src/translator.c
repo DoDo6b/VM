@@ -63,6 +63,8 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 
         hash_t hash = djb2Hash (instruction, sizeof (instruction));
 
+        log_string ("%s (hash: %lu)\n{\n", instruction, hash);
+
         switch (hash)
         {
             CASE_SIMPLEINSTRUCTION (HALT)
@@ -73,6 +75,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             CASE_SIMPLEINSTRUCTION (SUB)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
+            CASE_SIMPLEINSTRUCTION (DRAW)
 
             case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;
 
@@ -90,6 +93,8 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         }
         *instrc += 1;
 
+        log_string ("}\n");
+        
         if (ErrAcc)
         {
             log_err ("runtime error", "aborting");

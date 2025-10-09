@@ -42,6 +42,8 @@ static Erracc_t runThread (const char* bcname)
             case JLE:   jle (vm); break;
             case JGE:   jge (vm); break;
 
+            case DRAW:  draw(vm); break;
+
             case HALT: halt = true; break;
 
             default:
@@ -50,7 +52,7 @@ static Erracc_t runThread (const char* bcname)
                     bcname,
                     instrc,
                     "bytecode corruption",
-                    "unknown instruction: \"%0X\"",
+                    "unknown opcode: \"%0X\"",
                     *vm->codeseg.rip
                 );
                 VMdump (vm);

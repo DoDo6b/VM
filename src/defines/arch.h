@@ -47,6 +47,8 @@ enum OP_codes
     SUB   = 0X02,
     MUL   = 0X03,
     DIV   = 0X04,
+
+    DRAW  = 0X6E,
 };
 
 #define INSTRUCTIONBUF 8

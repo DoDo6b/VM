@@ -25,4 +25,6 @@ Erracc_t push (VM* vm);
 void     out  (VM* vm);
 void     pop  (VM* vm);
 
+void     draw (VM* vm);
+
 #endif

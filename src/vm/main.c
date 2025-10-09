@@ -1,7 +1,7 @@
 #include "../included/logger/logger.h"
 #include "run.h"
 
-#define LOGFILE "stdout"
+#define LOGFILE "log.html"
 
 
 int main (int argc, char** argv)

@@ -73,7 +73,7 @@ const char* get_log();
 
 void memDump (const void* pointer, size_t byteSize);
 
-void memBlockDump (const void* pointer, size_t size, size_t width);
+void memBlockDump (const void* pointer, const void* highlight, size_t size, size_t width);
 
 typedef unsigned long hash_t;
 

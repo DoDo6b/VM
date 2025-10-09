@@ -33,19 +33,20 @@ Erracc_t mov (VM* vm)
                 #pragma GCC diagnostic ignored "-Wcast-align"
 
                 ptr = *(const pointer_t*)vm->codeseg.rip;
+                
+                vm->codeseg.rip += sizeof (pointer_t);
 
                 if (ptr >= vm->memseg.size)
                 {
                     VMdump (vm);
                     ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
-                    log_err ("runtime error", "segfault");
+                    log_err ("runtime error", "segfault ptr: %llu > size: %zu", ptr, vm->memseg.size);
                 }
 
                 stackPop (vm->stack, vm->memseg.memory + ptr);
 
                 #pragma GCC diagnostic pop
 
-                vm->codeseg.rip += sizeof (pointer_t);
                 break;
             }
             else
@@ -65,7 +66,7 @@ Erracc_t mov (VM* vm)
             {
                 VMdump (vm);
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-                log_err ("error", "impossible r/m field in mod");
+                log_err ("bytecode corruption", "impossible r/m field in mod");
                 return ErrAcc;
             }
 
@@ -73,6 +74,8 @@ Erracc_t mov (VM* vm)
             #pragma GCC diagnostic ignored "-Wcast-align"
 
             ptr = (pointer_t)(*(const offset_t*)vm->codeseg.rip + vm->regs[MODDSTMASK]);
+
+            vm->codeseg.rip += sizeof (offset_t);
 
             if (ptr >= vm->memseg.size)
             {
@@ -92,7 +95,7 @@ Erracc_t mov (VM* vm)
         default:
             VMdump (vm);
             ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-            log_err ("translation error", "bytecode corrupted");
+            log_err ("bytecode corruption", "cant parse operands");
             return ErrAcc;
     }
 

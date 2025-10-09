@@ -17,11 +17,11 @@
 
 enum InstructionHash
 {
-    HALT_HASH = 6385287662,
+    HALT_HASH = 2090320366,
 
     OUT_HASH   = 193501853,
     POP_HASH   = 193466804,
-    PUSH_HASH  = 6385597157,
+    PUSH_HASH  = 2090629861,
 
     MOV_HASH   = 193499479,
 
@@ -39,6 +39,8 @@ enum InstructionHash
     SUB_HASH   = 193506191,
     MUL_HASH   = 193499667,
     DIV_HASH   = 193489480,
+
+    DRAW_HASH  = 2090194771,
 };
 
 

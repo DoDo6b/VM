@@ -145,7 +145,7 @@ IF_DBG(,seg->hash)
     log_string ("<dft>\n}\n");
 
     log_string ("<blk>dump:<dft>\n");
-    memBlockDump (seg->code, seg->size, 16);
+    memBlockDump (seg->code, seg->rip, seg->size, 16);
 
     return ErrAcc;
 }
@@ -215,7 +215,7 @@ Erracc_t RAMdump (const RAMseg* seg)
     );
 
     log_string ("<blk>RAM dump:<dft>\n");
-    memBlockDump (seg->memory, seg->size, 16);
+    memBlockDump (seg->memory, NULL, seg->size, 16);
 
     return ErrAcc;
 }

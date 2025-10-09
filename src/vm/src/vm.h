@@ -11,8 +11,8 @@
 #include "segments/segments.h"
 #include "../../included/stack/stack.h"
 
-#define STACKSIZE 16
-#define RAMSIZE 512
+#define STACKSIZE 2048
+#define RAMSIZE 4096
 
 
 typedef struct

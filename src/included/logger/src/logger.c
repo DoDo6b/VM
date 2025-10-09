@@ -182,13 +182,13 @@ void memDump (const void* pointer, size_t byteSize)
     log_string ("<dft>\n  }\n");
 }
 
-void memBlockDump (const void* pointer, size_t size, size_t width)
+void memBlockDump (const void* pointer, const void* highlight, size_t size, size_t width)
 {
     const unsigned char* ptr = (const unsigned char*)pointer;
 
     log_string ("{\n  ");
 
-    log_string ("                ");
+    log_string ("                    ");
     log_string ("<blk>");
     for (size_t i = 0; i < width && i < size; i++) 
     {   
@@ -199,13 +199,15 @@ void memBlockDump (const void* pointer, size_t size, size_t width)
 
     for (size_t y = 0; y < size; y += width, ptr += width)
     {
-        log_string ("  %p: ", ptr);
+        log_string ("  0x%p: ", ptr);
 
         log_string ("<cyn>");
         for (size_t x = 0; x < width && y + x < size; x++)
         {
             if (x % 4 == 0) log_string (" ");
-            log_string ("%02X ", *(ptr + x));
+
+            if (ptr + x != highlight) log_string ("%02X ", *(ptr + x));
+            else                      log_string ("<dft><mgn>%02X<dft><cyn> ", *(ptr + x));
         }
         log_string ("<dft>\n");
     }
