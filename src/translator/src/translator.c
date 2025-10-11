@@ -76,16 +76,19 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
             CASE_SIMPLEINSTRUCTION (DRAW)
+            CASE_SIMPLEINSTRUCTION (RET)
 
             case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;
 
-            case JMP_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_NOCOND); break;
-            case JNZ_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_NZERO);  break;
-            case JZ_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
-            case JL_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_LESS);   break;
-            case JLE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_LEQ);    break;
-            case JG_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_GRTR);   break;
-            case JGE_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_GEQ);    break;
+            case JMP_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_NOCOND); break;
+            case JNZ_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_NZERO);  break;
+            case JZ_HASH:   decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
+            case JL_HASH:   decomposeJMP (bufR, bufW, *instrc, JMP_LESS);   break;
+            case JLE_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_LEQ);    break;
+            case JG_HASH:   decomposeJMP (bufR, bufW, *instrc, JMP_GRTR);   break;
+            case JGE_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_GEQ);    break;
+            
+            case CALL_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_CALL);   break;
 
             case PUSH_HASH: writePush (bufW, bufR, *instrc); break;
             

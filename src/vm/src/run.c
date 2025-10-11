@@ -42,6 +42,9 @@ static Erracc_t runThread (const char* bcname)
             case JLE:   jle (vm); break;
             case JGE:   jge (vm); break;
 
+            case CALL:  call(vm); break;
+            case RET:   ret (vm); break;
+
             case DRAW:  draw(vm); break;
 
             case HALT: halt = true; break;

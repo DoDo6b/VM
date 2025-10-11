@@ -30,6 +30,7 @@ typedef enum
     JMP_ZERO   = 4,
     JMP_GEQ    = 5,
     JMP_GRTR   = 6,
+    JMP_CALL   = 7,
 }JMPCOND;
 
 Erracc_t decomposeChpoint (const char* str, Buffer* bufW);

@@ -19,6 +19,9 @@ Erracc_t jle  (VM* vm);
 Erracc_t jg   (VM* vm);
 Erracc_t jge  (VM* vm);
 
+Erracc_t call (VM* vm);
+Erracc_t ret  (VM* vm);
+
 Erracc_t mov  (VM* vm);
 
 Erracc_t push (VM* vm);

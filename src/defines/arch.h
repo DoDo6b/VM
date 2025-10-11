@@ -41,6 +41,9 @@ enum OP_codes
     JGE   = 0X7D,
     JG    = 0X7F,
 
+    CALL  = 0X7A,
+    RET   = 0X7B,
+
     CMP  = 0X60,
 
     ADD   = 0X01,

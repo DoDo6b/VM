@@ -34,6 +34,14 @@ VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize)
         return NULL;
     }
 
+    vm->callstack = stackInit (stackSize, sizeof (const char*));
+    if (ErrAcc)
+    {
+        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
+        log_err ("internal error", "call stack segment wasnt initialized");
+        return NULL;
+    }
+
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
     return vm;
@@ -46,6 +54,7 @@ void VMFree (VM* vm)
         freeCodeseg (&vm->codeseg);
         freeRAMseg  (&vm->memseg);
         stackFree   ( vm->stack);
+        stackFree   ( vm->callstack);
         memset (vm, 0, sizeof (VM));
         free (vm);
     }
@@ -88,10 +97,17 @@ Erracc_t VMVerify (const VM* vm)
     }
 
     Erracc_t stackST = stackVerify (vm->stack);
-    if (stackVerify (vm->stack) != 0)
+    if (stackST != 0)
     {
         ErrAcc |= VM_ERRCODE (VM_STACKVERIFICATION);
         log_err ("verification error", "stack failed verification with code: %llu", stackST);
+    }
+
+    Erracc_t callStackST = stackVerify (vm->callstack);
+    if (callStackST != 0)
+    {
+        ErrAcc |= VM_ERRCODE (VM_STACKVERIFICATION);
+        log_err ("verification error", "call stack failed verification with code: %llu", callStackST);
     }
 
     return ErrAcc;
@@ -130,6 +146,7 @@ Erracc_t VMdump (const VM* vm)
 
     codesegDump (&vm->codeseg);
     stackDump   (vm->stack);
+    stackDump   (vm->callstack);
     RAMdump     (&vm->memseg);
 
     return ErrAcc;

@@ -40,6 +40,9 @@ enum InstructionHash
     MUL_HASH   = 193499667,
     DIV_HASH   = 193489480,
 
+    CALL_HASH  = 2090140673,
+    RET_HASH   = 193504592,
+
     DRAW_HASH  = 2090194771,
 };
 

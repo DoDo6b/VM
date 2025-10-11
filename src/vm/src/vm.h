@@ -19,6 +19,7 @@ typedef struct
 {
     CodeSeg      codeseg;
     StackHandler stack;
+    StackHandler callstack;
     RAMseg       memseg;
 
     union

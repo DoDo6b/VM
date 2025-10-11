@@ -110,13 +110,16 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
 
     switch (condition)
     {
-        case JMP_NOCOND: jmpopcode = JMP; break;
-        case JMP_LESS:   jmpopcode = JL;  break;
-        case JMP_LEQ:    jmpopcode = JLE; break;
-        case JMP_NZERO:  jmpopcode = JNZ; break;
-        case JMP_ZERO:   jmpopcode = JZ;  break;
-        case JMP_GEQ:    jmpopcode = JGE; break;
-        case JMP_GRTR:   jmpopcode = JG ; break;
+        case JMP_NOCOND: jmpopcode = JMP;  break;
+        case JMP_LESS:   jmpopcode = JL;   break;
+        case JMP_LEQ:    jmpopcode = JLE;  break;
+        case JMP_NZERO:  jmpopcode = JNZ;  break;
+        case JMP_ZERO:   jmpopcode = JZ;   break;
+        case JMP_GEQ:    jmpopcode = JGE;  break;
+        case JMP_GRTR:   jmpopcode = JG;   break;
+
+        case JMP_CALL:   jmpopcode = CALL; break;
+        
         default:
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
             log_err ("internal error", "wrong type of JMP");
