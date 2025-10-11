@@ -9,7 +9,7 @@ static inline void updateT2Hashes (Stack* dst)
     assertStrict (dst->data, "stack wasnt initialized");
 
     dst->crc32Data  = crc32Calculate ((unsigned char*)dst->data, dst->capacity * dst->sizeOfElem);
-    dst->crc32      = crc32Calculate ((unsigned char*)dst, &dst->crc32 - &dst->frontCanary);
+    dst->crc32      = crc32Calculate ((unsigned char*)dst, (size_t)(&dst->crc32 - &dst->frontCanary));
 }
 )
 
@@ -38,7 +38,7 @@ T2( updateT2Hashes (stack); )
 }
 
 
-Stack* stackInitD (size_t numOfElem, size_t sizeOfElem)
+Stack* stackInitD (size_t numOfElem, ssize_t sizeOfElem)
 {
     Stack* dst = (Stack*)calloc(1, sizeof(Stack));
     assertStrict (dst, "calloc returned NULL");
@@ -46,14 +46,14 @@ Stack* stackInitD (size_t numOfElem, size_t sizeOfElem)
 
     assertStrict (numOfElem > 0 && sizeOfElem > 0, "cant allocate stack with capacity 0 or element size equal 0");
 
-    size_t reservedMemory = 0 T1 ( + 2 * sizeof (uintptr_t) + numOfElem * sizeOfElem % sizeof (uintptr_t) );
-    dst->data = (char*) calloc (1, numOfElem * sizeOfElem + reservedMemory) T1 ( + sizeof (uintptr_t));
-    assertStrict (dst->data, "calloc returned NUL");
+    size_t reservedMemory = 0 T1 ( + 2 * sizeof (uintptr_t) + numOfElem * (size_t)sizeOfElem % sizeof (uintptr_t) );
+    dst->data = (char*) calloc (1, numOfElem * (size_t)sizeOfElem + reservedMemory) T1 ( + sizeof (uintptr_t));
+    assertStrict (dst->data != (void*)(0 T1 ( + sizeof (uintptr_t))), "calloc returned NUL");
 
     if (dst->data)
     {
         dst->top        = dst->data;
-        dst->sizeOfElem = sizeOfElem;
+        dst->sizeOfElem = (size_t)sizeOfElem;
         dst->capacity   = numOfElem;
 
 T1      (
@@ -80,13 +80,13 @@ void stackReallocD (Stack* stack, size_t newCapacity, bool ignoreDataLoss)
 
     if (stack->capacity == newCapacity) return;
 
-    assertStrict (newCapacity > stack->capacity || ignoreDataLoss || (stack->top - stack->data) / stack->sizeOfElem < newCapacity, "data loss");
-    if (newCapacity < stack->capacity && !ignoreDataLoss && (stack->top - stack->data) / stack->sizeOfElem > newCapacity) return;
+    assertStrict (newCapacity > stack->capacity ||  ignoreDataLoss || (size_t)(stack->top - stack->data) / stack->sizeOfElem < newCapacity, "data loss");
+    if (          newCapacity < stack->capacity && !ignoreDataLoss && (size_t)(stack->top - stack->data) / stack->sizeOfElem > newCapacity) return;
 
     size_t reservedMemory = 0 T1 ( + 2 * sizeof (uintptr_t) + newCapacity * stack->sizeOfElem % sizeof (uintptr_t) );
 
     size_t newSize        = newCapacity * stack->sizeOfElem + reservedMemory;
-    size_t topOffset      = stack->top - stack->data;
+    size_t topOffset      = (size_t)(stack->top - stack->data);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
@@ -180,7 +180,7 @@ T2(     updateT2Hashes (stack); )
 size_t stackLenD (const Stack* stack)
 {
     assertStrict (stackVerifyD (stack) == 0, "verification failed, cant continue");
-    return (stack->top - stack->data) / stack->sizeOfElem;
+    return (size_t)(stack->top - stack->data) / stack->sizeOfElem;
 }
 
 
@@ -239,10 +239,8 @@ T1  (
 }
 
 
-uint64_t stackVerifyD_ (const char* callerFile, unsigned int callerLine, const Stack* stack)
+Erracc_t stackVerifyD_ (const char* callerFile, unsigned int callerLine, const Stack* stack)
 {
-    uint64_t selfTestingCode = 0;
-
     if (stack == NULL)
     {
         log_string
@@ -252,9 +250,9 @@ uint64_t stackVerifyD_ (const char* callerFile, unsigned int callerLine, const S
             callerLine,
             __func__
         );
-        selfTestingCode |= RECIVED_NULL;
-        log_err ("verification error", "failed with code: %llu", selfTestingCode);
-        return selfTestingCode;
+        ErrAcc |= STCK_ERRCODE (RECIVED_NULL);
+        log_err ("verification error", "failed");
+        return ErrAcc;
     }
 
 T1  (
@@ -267,9 +265,9 @@ T1  (
             callerLine,
             __func__
         );
-        selfTestingCode |= MAIN_SIGNES_CORRUPTED;
-        log_err ("verification error", "failed with code: %llu", selfTestingCode);
-        return selfTestingCode;
+        ErrAcc |= STCK_ERRCODE (MAIN_SIGNES_CORRUPTED);
+        log_err ("verification error", "failed");
+        return ErrAcc;
     }
     )
 
@@ -282,12 +280,12 @@ T1  (
             callerLine,
             __func__
         );
-        selfTestingCode |= NOT_INITILIZED;
-        log_err ("verification error", "failed with code: %llu", selfTestingCode);
-        return selfTestingCode;
+        ErrAcc |= STCK_ERRCODE (NOT_INITILIZED);
+        log_err ("verification error", "failed");
+        return ErrAcc;
     }
 
-    if (stack->top < stack->data || stack->top > stack->data + stack->capacity * stack->sizeOfElem || (stack->top - stack->data) % stack->sizeOfElem != 0)
+    if (stack->top < stack->data || stack->top > stack->data + stack->capacity * stack->sizeOfElem || (size_t)(stack->top - stack->data) % stack->sizeOfElem != 0)
     {
         log_string
         (
@@ -296,11 +294,11 @@ T1  (
             callerLine,
             __func__
         );
-        selfTestingCode |= TOPPTR_OUTOFBOUNDS;
+        ErrAcc |= STCK_ERRCODE (TOPPTR_OUTOFBOUNDS);
     }
 
 T2  ( 
-    if (stack->crc32 != crc32Calculate ((const unsigned char*)stack, &stack->crc32 - &stack->frontCanary))
+    if (stack->crc32 != crc32Calculate ((const unsigned char*)stack, (size_t)(&stack->crc32 - &stack->frontCanary)))
     {
         log_string
         (
@@ -309,7 +307,7 @@ T2  (
             callerLine,
             __func__
         );
-        selfTestingCode |= CRCMAIN_HASCHANGED;
+        ErrAcc |= STCK_ERRCODE (CRCMAIN_HASCHANGED);
     }
     )
 
@@ -329,7 +327,7 @@ T1  (
             callerLine,
             __func__
         );
-        selfTestingCode |= DATABLOCK_SIGNES_CORRUPTED;
+        ErrAcc |= STCK_ERRCODE (DATABLOCK_SIGNES_CORRUPTED);
     }
     )
 
@@ -345,14 +343,14 @@ T2  (
             callerLine,
             __func__
         );
-        selfTestingCode |= CRCDATA_HASHCHANGED;
+        ErrAcc |= STCK_ERRCODE (CRCDATA_HASHCHANGED);
     }
     )
 
 
-    if (selfTestingCode != 0)
+    if (ErrAcc != 0)
     {
-        log_err ("verification error", "failed with code: %llu", selfTestingCode);
+        log_err ("verification error", "failed");
     }
-    return selfTestingCode;
+    return ErrAcc;
 }

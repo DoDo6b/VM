@@ -3,6 +3,7 @@
 
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -17,6 +18,10 @@
 
 
 #define NAME_MAX 255
+
+typedef uint64_t Erracc_t;
+
+extern Erracc_t ErrAcc;
 
 FILE* log_start (const char* fname);
 
@@ -44,11 +49,53 @@ const char* get_log();
         __LINE__,\
         __func__,\
         ##__VA_ARGS__\
-    )
+    );\
+    log_string \
+    (\
+        "    | errAcc: %llu\n",\
+        ErrAcc\
+    )\
+
+#define log_srcerr(file, line, class, description, ...)  log_string \
+    (\
+        "%s:%d: %s: <b><red>" class ":<dft> " description "</b>\n",\
+        file,\
+        line,\
+        __func__,\
+        ##__VA_ARGS__\
+    );\
+    log_string \
+    (\
+        "    | errAcc: %llu\n",\
+        ErrAcc\
+    )\
 
 
 void memDump (const void* pointer, size_t byteSize);
 
-unsigned long djb2Hash (const char* hashable, size_t size);
+void memBlockDump (const void* pointer, const void* highlight, size_t size, size_t width);
+
+typedef unsigned long hash_t;
+
+hash_t djb2Hash (const char* hashable, size_t size);
+
+
+#ifndef _WIN32
+#include <sys/stat.h>
+inline long fileSize (FILE* handler)
+{
+    assert (handler);
+
+    struct stat statistic = {};
+    if (fstat (fileno (handler), &statistic) < 0) return -1;
+
+    return (long)statistic.st_size;
+}
+#else
+#include <io.h>
+
+#define fileSize(handler)  filelength (fileno (handler))
+#endif
+
 
 #endif

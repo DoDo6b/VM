@@ -4,16 +4,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "included/logger/logger.h"
-#include "included/kassert/kassert.h"
-#include "included/Macro.h"
+#include "../../logger/logger.h"
+#include "../../kassert/kassert.h"
+#include "../../Macro.h"
 
 #include "../Policy.h"
 #if TOLERANCEPOLICY_LVL >= 2
-    #include "crc.h"
+    #include "../../crc/crc.h"
 #endif
 
-#include "errCodes.h"
+#include "stackcodes.h"
 
 
 const uint32_t FRONTCANARY = 0X8BADF00D;
@@ -32,7 +32,7 @@ T2( uint32_t crc32; )
 T1( uint32_t tailCanary; )
 }Stack;
 
-Stack* stackInitD (size_t numOfElem, size_t sizeOfElem);
+Stack* stackInitD (size_t numOfElem, ssize_t sizeOfElem);
 
 const unsigned int GrowthRate = 200;
 const unsigned int ReductionRate = 66;
@@ -53,7 +53,7 @@ size_t stackLenD (const Stack* stack);
 void    stackDumpD_ (const char* name, const Stack* stack, void (*print)(const void* obj));
 #define stackDumpD(stack) stackDumpD_ (#stack, stack, NULL)
 
-uint64_t stackVerifyD_ (const char* callerFile, unsigned int callerLine, const Stack* stack);
+Erracc_t stackVerifyD_ (const char* callerFile, unsigned int callerLine, const Stack* stack);
 #define  stackVerifyD(stack) stackVerifyD_ (__FILE__, __LINE__, stack)
 
 

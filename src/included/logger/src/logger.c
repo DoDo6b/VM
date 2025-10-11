@@ -4,6 +4,7 @@
 static char LogFile[NAME_MAX] = "";
 static FILE* LogStream = NULL;
 
+Erracc_t ErrAcc = 0;
 
 FILE* log_start (const char* fname)
 {
@@ -32,14 +33,14 @@ FILE* log_start (const char* fname)
 }
 
 
-unsigned long djb2Hash (const char* hashable, size_t size)
+hash_t djb2Hash (const char* hashable, size_t size)
 {
     if (!hashable)
     {
         print_stderr ("internal error", "can't get hash(NULL received)\n");
         return 0;
     }
-    unsigned long hash = 5381;
+    hash_t hash = 5381;
     
     for (; *hashable && size > 0; hashable++, size--)
     {
@@ -145,7 +146,7 @@ int log_string (const char* format, ...)
 
 void log_close()
 {
-    if (LogStream && (LogStream != stdout || LogStream != stderr) ) 
+    if (LogStream && LogStream != stdout && LogStream != stderr) 
     {
         fprintf (LogStream, "\n</pre>\n");
         fclose (LogStream);
@@ -163,7 +164,7 @@ void memDump (const void* pointer, size_t byteSize)
 {
     const unsigned char* ptr        =   (const unsigned char*)pointer;
 
-    log_string ("  Memory dump of %p(%zu byte(s))\n", pointer, byteSize);
+    log_string ("  Memory dump of 0x%p(%zu byte(s))\n", pointer, byteSize);
     log_string ("  {\n    ");
     
     log_string ("<blk>");
@@ -173,10 +174,43 @@ void memDump (const void* pointer, size_t byteSize)
     }
     log_string ("<dft>\n    <cyn>");
 
-    for (size_t i=0; i < byteSize; i++)
+    for (size_t i = 0; i < byteSize; i++)
     {
-        log_string ("%02X ", *(ptr+i));
+        log_string ("%02X ", *(ptr + i));
     }
         
     log_string ("<dft>\n  }\n");
+}
+
+void memBlockDump (const void* pointer, const void* highlight, size_t size, size_t width)
+{
+    const unsigned char* ptr = (const unsigned char*)pointer;
+
+    log_string ("{\n  ");
+
+    log_string ("                    ");
+    log_string ("<blk>");
+    for (size_t i = 0; i < width && i < size; i++) 
+    {   
+        if (i % 4 == 0) log_string (" ");
+        log_string ("%02zX ", i);
+    }
+    log_string ("<dft>\n");
+
+    for (size_t y = 0; y < size; y += width, ptr += width)
+    {
+        log_string ("  0x%p: ", ptr);
+
+        log_string ("<cyn>");
+        for (size_t x = 0; x < width && y + x < size; x++)
+        {
+            if (x % 4 == 0) log_string (" ");
+
+            if (ptr + x != highlight) log_string ("%02X ", *(ptr + x));
+            else                      log_string ("<dft><mgn>%02X<dft><cyn> ", *(ptr + x));
+        }
+        log_string ("<dft>\n");
+    }
+    
+    log_string ("}\n");
 }
