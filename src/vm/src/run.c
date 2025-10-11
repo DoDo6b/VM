@@ -31,6 +31,8 @@ static Erracc_t runThread (const char* bcname)
             case MUL:  mul  (vm); break;
             case DIV:  div  (vm); break;
 
+            case IN:    in  (vm); break;
+
             case PUSH:  push(vm); break;
             case MOV:   mov (vm); break;
             
@@ -46,6 +48,7 @@ static Erracc_t runThread (const char* bcname)
             case RET:   ret (vm); break;
 
             case DRAW:  draw(vm); break;
+            case DMP:   dmp (vm); break;
 
             case HALT: halt = true; break;
 

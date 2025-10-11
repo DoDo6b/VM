@@ -27,6 +27,8 @@ enum OP_codes
 {
     HALT = 0X66,
 
+    IN    = 0X5E,
+
     OUT   = 0X50,
     POP   = 0X55,
     PUSH  = 0X53,
@@ -44,13 +46,14 @@ enum OP_codes
     CALL  = 0X7A,
     RET   = 0X7B,
 
-    CMP  = 0X60,
+    CMP  =  0X60,
 
     ADD   = 0X01,
     SUB   = 0X02,
     MUL   = 0X03,
     DIV   = 0X04,
 
+    DMP   = 0X6A,
     DRAW  = 0X6E,
 };
 

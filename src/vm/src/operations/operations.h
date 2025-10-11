@@ -24,10 +24,13 @@ Erracc_t ret  (VM* vm);
 
 Erracc_t mov  (VM* vm);
 
+Erracc_t in   (VM* vm);
+
 Erracc_t push (VM* vm);
 void     out  (VM* vm);
 void     pop  (VM* vm);
 
 void     draw (VM* vm);
+void     dmp  (VM* vm);
 
 #endif
