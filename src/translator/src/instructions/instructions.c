@@ -24,7 +24,7 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
 
     opcode_t mod = 0;
 
-    bufSpaces (bufR);
+    bufSSpaces (bufR);
 
     char ch = bufpeekc (bufR);
     if (isalpha ((unsigned char)ch))
@@ -114,7 +114,7 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
     writeOPcode (bufW, MOV);
 
     opcode_t mod = 0;
-    bufSpaces (bufR);
+    bufSSpaces (bufR);
 
     if (bufpeekc (bufR) == '[')
     {

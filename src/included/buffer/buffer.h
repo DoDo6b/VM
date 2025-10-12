@@ -36,23 +36,26 @@ Buffer* bufInit (size_t size);
 void bufFree (Buffer* buf);
 
 Erracc_t bufVerify (Buffer* buf, Erracc_t ignored);
+Erracc_t bufDump   (Buffer* buf);
 
 int bufSetStream (Buffer* buf, const char* name, FILE* stream,  BufMode_t  mode);
 FILE* bufFOpen   (Buffer* buf, const char* fname,              const char* mode);
 
 size_t bufRead  (Buffer* buf, size_t size);
+size_t bufLSplit(Buffer* buf);
 size_t bufWrite (Buffer* buf, void* src, size_t size); 
 size_t bufFlush (Buffer* buf);
 
 size_t bufScanf    (Buffer* buf, const char* format, void* dst);
-char   bufGetc    (Buffer* buf);
-char   bufpeekc   (Buffer* buf);
+long   bufNLine    (Buffer* buf);
+char   bufGetc     (Buffer* buf);
+char   bufpeekc    (Buffer* buf);
 
 long long bufSeek (Buffer* buf, long offset, char base);
 long      bufTell (Buffer* buf);
 void bufCpy (Buffer* buf, void* dst, size_t size);
 
-void bufSpaces (Buffer* buf);
+void bufSSpaces (Buffer* buf);
 
 
 #endif

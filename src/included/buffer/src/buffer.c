@@ -79,6 +79,32 @@ Erracc_t bufVerify (Buffer* buf, Erracc_t ignored)
     return ErrAcc;
 }
 
+Erracc_t bufDump (Buffer* buf)
+{
+    assertStrict (bufVerify (buf, BUFOVERFLOW | BUFDETACHED | BUFFACCESS) == 0, "failed buffer verification");
+
+    log_string
+    (
+        "<blu><b>buffer dump:</b><dft>\n"
+        "bufsiz:  %llu\n"
+        "buflen:  %llu\n"
+        "mode:    %d\n"
+        "buffer:  %p\n"
+        "bufpos:  %p\n"
+        "stream:  %p\n",
+        buf->size,
+        buf->len,
+        buf->mode,
+        buf->buffer,
+        buf->bufpos,
+        buf->stream
+    );
+    if (buf->name) log_string ("name:    %s\n", buf->name);
+    memBlockDump (buf->buffer, NULL, buf->size, 64);
+    
+    return ErrAcc;
+}
+
 
 int bufSetStream (Buffer* buf, const char* name, FILE* stream, BufMode_t mode)
 {
@@ -186,10 +212,26 @@ size_t bufRead (Buffer* buf, size_t size)
     }
     else size = buf->size - buf->len;
     
-    size_t read = fread (buf->buffer + buf->len, size, 1, buf->stream);
-    buf->len += read;
+    fread (buf->buffer + buf->len, size, 1, buf->stream);
+    buf->len += size;
 
     return size;
+}
+
+size_t bufLSplit (Buffer* buf)
+{
+    size_t replaced = 0;
+
+    for (size_t i = 0; i < buf->len; i++)
+    {
+        if (buf->buffer[i] == '\n')
+        {
+            buf->buffer[i] = '\0';
+            replaced++;
+        }
+    }
+
+    return replaced;
 }
 
 size_t bufWrite (Buffer* buf, void* src, size_t size)
@@ -236,7 +278,21 @@ size_t bufScanf (Buffer* buf, const char* format, void* dst)
     return read;
 }
 
-void bufSpaces (Buffer* buf)
+long bufNLine (Buffer* buf)
+{
+    assertStrict (bufVerify (buf, 0) == 0, "failed buffer verification");
+    assertStrict (buf->mode == BUFREAD, "incompatible buffer mode");
+
+    char* nextline = strchr (buf->bufpos, '\0') + 1;
+
+    if (nextline > buf->buffer + buf->len) return -1;
+    long skipped = (long)(nextline - buf->bufpos);
+    buf->bufpos = nextline;
+    return skipped;
+}
+
+
+void bufSSpaces (Buffer* buf)
 {
     assertStrict (bufVerify (buf, 0) == 0, "buffer failed verification");
     assertStrict (buf->mode == BUFREAD, "incompatible buffer mode");

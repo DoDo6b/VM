@@ -143,7 +143,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
         .offset = 0,
     };
 
-    bufSpaces (bufR);
+    bufSSpaces (bufR);
 
     instruction_t jmptag = {0};
     if (!bufScanf (bufR, "%s", jmptag))

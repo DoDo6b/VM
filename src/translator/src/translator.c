@@ -57,7 +57,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
     {
         if (*instruction == ';')
         {
-            bufR->bufpos = strchr (bufR->bufpos, '\n');
+            bufNLine (bufR);
             continue;
         }
 
@@ -99,12 +99,36 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         *instrc += 1;
 
         log_string ("}\n");
+
+        bufSSpaces (bufR);
+        if (bufpeekc (bufR) != '\0' && bufpeekc (bufR) != ';')
+        {
+            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
+            log_srcerr
+            (
+                bufR->name,
+                *instrc + 1,
+                "syntax error",
+                "multiple instructions in line"
+            );
+        }
         
         if (ErrAcc)
         {
             log_err ("runtime error", "aborting");
             break;
         }
+
+        bool stop = false;
+        while (*bufR->bufpos == ' ' || *bufR->bufpos == '\0') 
+        {
+            if (bufNLine (bufR) == -1)
+            {
+                stop = true;
+                break;
+            }
+        }
+        if (stop) break;
     }
 
     if (remainingUnprocJMPReq () != 0)
@@ -135,6 +159,7 @@ uint64_t translate (const char* input, const char* output)
     bufSetStream (bufW, output, bin,     BUFWRITE);
 
     bufRead (bufR, 0);
+    bufLSplit (bufR);
 
     fseek (bin, sizeof (Header), SEEK_SET);
 
