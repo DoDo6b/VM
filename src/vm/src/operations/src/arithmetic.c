@@ -90,16 +90,17 @@ Erracc_t div (VM* vm)
         return ErrAcc;
     }
     operand_t operand1 = 0;
+    stackPop (vm->stack, &operand1);
 
     if (operand1 == 0)
     {
+        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_DIVISIONBYZERO);
         log_err ("runtime error", "division by zero");
         return ErrAcc;
     }
 
     operand_t operand2 = 0;
-    stackPop (vm->stack, &operand1);
     stackPop (vm->stack, &operand2);
 
     operand2 /= operand1;

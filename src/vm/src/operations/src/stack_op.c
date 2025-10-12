@@ -2,6 +2,22 @@
 
 #define MODSRCMASK  ((mod >> 3) & 0x07)
 
+Erracc_t in (VM* vm)
+{
+    assertStrict (VMVerify (vm) == 0, "vm corrupted");
+
+    vm->codeseg.rip += sizeof (opcode_t);
+
+    operand_t operand = 0;
+
+    while (!scanf ("%lld", &operand));
+
+    stackPush (vm->stack, &operand);
+
+    return ErrAcc;
+}
+
+
 Erracc_t push (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
