@@ -26,3 +26,10 @@ void draw (VM* vm)
         printf ("\n");
     }
 }
+
+void dmp (VM* vm)
+{
+    VMdump (vm);
+
+    vm->codeseg.rip += sizeof (opcode_t);
+}

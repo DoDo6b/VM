@@ -68,6 +68,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         switch (hash)
         {
             CASE_SIMPLEINSTRUCTION (HALT)
+            CASE_SIMPLEINSTRUCTION (IN)
             CASE_SIMPLEINSTRUCTION (OUT)
             CASE_SIMPLEINSTRUCTION (POP)
             CASE_SIMPLEINSTRUCTION (CMP)
@@ -76,6 +77,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             CASE_SIMPLEINSTRUCTION (MUL)
             CASE_SIMPLEINSTRUCTION (DIV)
             CASE_SIMPLEINSTRUCTION (DRAW)
+            CASE_SIMPLEINSTRUCTION (DMP)
             CASE_SIMPLEINSTRUCTION (RET)
 
             case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;

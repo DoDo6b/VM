@@ -3,9 +3,9 @@
 
 //#define AREALLOC
 
-#define TOLERANCEPOLICY_LVL 3
-#define SECURITY_LVL        1
-#define LOGGINGLVL          3
+#define TOLERANCEPOLICY_LVL 0
+#define SECURITY_LVL        0
+#define LOGGINGLVL          0
 
 
 #if SECURITY_LVL >= 1

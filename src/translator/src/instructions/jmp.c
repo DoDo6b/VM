@@ -80,6 +80,18 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
                 log_err ("writing error", "cant write into buffer");
                 return ErrAcc;
             }
+
+            log_string
+            (
+                "has wrote: JMP\n"
+                "{\n"
+                "opcode: %0X\n"
+                "offset: %lld\n"
+                "}\n",
+                opcode.opcode,
+                opcode.offset
+            );
+
             bufW->bufpos = bufWpos;
 
             JMPWaitingList.jmprequests[i].hash          = 0;
@@ -159,6 +171,18 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
                 log_err ("writing error", "cant write into buffer");
                 IMSTP ( exit (EXIT_FAILURE); )
             }
+
+            log_string
+            (
+                "  has wrote: JMP\n"
+                "  {\n"
+                "  opcode: %0X\n"
+                "  offset: %lld\n"
+                "  }\n",
+                opcode.opcode,
+                opcode.offset
+            );
+            
             return ErrAcc;
         }
     }
@@ -200,5 +224,6 @@ size_t remainingUnprocJMPReq ()
     {
         if (JMPWaitingList.jmprequests[i].hash != 0 && JMPWaitingList.jmprequests[i].absBackJMPptr != 0) requests++;
     }
+    if (requests > 0) jmpWLdump ();
     return requests;
 }

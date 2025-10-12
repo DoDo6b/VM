@@ -19,8 +19,10 @@ enum InstructionHash
 {
     HALT_HASH = 2090320366,
 
+    IN_HASH    = 5863484,
+
     OUT_HASH   = 193501853,
-    POP_HASH   = 193466804,
+    POP_HASH   = 193502740,
     PUSH_HASH  = 2090629861,
 
     MOV_HASH   = 193499479,
@@ -33,6 +35,9 @@ enum InstructionHash
     JGE_HASH   = 193495931,
     JG_HASH    = 5863510,
 
+    CALL_HASH  = 2090140673,
+    RET_HASH   = 193504592,
+
     CMP_HASH  = 193488517,
 
     ADD_HASH   = 193486030,
@@ -40,9 +45,7 @@ enum InstructionHash
     MUL_HASH   = 193499667,
     DIV_HASH   = 193489480,
 
-    CALL_HASH  = 2090140673,
-    RET_HASH   = 193504592,
-
+    DMP_HASH   = 193489606,
     DRAW_HASH  = 2090194771,
 };
 
