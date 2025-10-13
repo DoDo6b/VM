@@ -207,7 +207,7 @@ void memBlockDump (const void* pointer, const void* highlight, size_t size, size
             if (x % 4 == 0) log_string (" ");
 
             if (ptr + x != highlight) log_string ("%02X ", *(ptr + x));
-            else                      log_string ("<dft><mgn>%02X<dft><cyn> ", *(ptr + x));
+            else                      log_string ("<dft><mgn><b>%02X</b><dft><cyn> ", *(ptr + x));
         }
         log_string ("<dft>\n");
     }

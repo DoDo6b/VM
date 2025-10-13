@@ -31,8 +31,8 @@ Erracc_t buildCodeseg (CodeSeg* seg, const char* bcname)
     FILE* stream = fopen (bcname, "rb");
     if (!stream)
     {
-        ErrAcc |= VM_ERRCODE (VM_FOPENERR);
-        log_err ("fopen error", "cant open byte code");
+        ErrAcc |= VM_ERRCODE (VM_FSERR);
+        log_err ("fs error", "cant open file");
         return ErrAcc;
     }
 
@@ -44,10 +44,10 @@ Erracc_t buildCodeseg (CodeSeg* seg, const char* bcname)
     }
 
     long size = fileSize (stream) - (ssize_t)sizeof (Header);
-    if (size < 0)
+    if (size <= 0)
     {
         ErrAcc |= VM_ERRCODE (VM_UNKNOWNERR);
-        log_err ("filesys err", "file size < 0");
+        log_err ("fs error", "file size < 0");
         return ErrAcc;
     }
     seg->size = (size_t)size;
@@ -55,19 +55,19 @@ Erracc_t buildCodeseg (CodeSeg* seg, const char* bcname)
     seg->code = (char*)calloc ((size_t)fileSize (stream), sizeof (char));
     if (!seg->code)
     {
-        ErrAcc |= VM_ERRCODE (VM_ALLOCATIONERR);
-        log_err ("internal error", "calloc returned NULL");
+        ErrAcc |= VM_ERRCODE (VM_ALLOCERR);
+        log_err ("allocation error", "calloc returned NULL");
         fclose (stream);
         return ErrAcc;
     }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-    if (fread ((void*)seg->code, sizeof (char), seg->size, stream) != seg->size)
+    if (fread ((void*)seg->code, sizeof (char), seg->size, stream) * sizeof (char) != seg->size)
 #pragma GCC diagnostic pop
     {
-        ErrAcc |= VM_ERRCODE (VM_FREADERR);
-        log_err ("runtime warning", "read less than the file size is");
+        ErrAcc |= VM_ERRCODE (VM_FSERR);
+        log_err ("fs warning", "read less than the file size is");
     }
     fclose (stream);
 
@@ -105,7 +105,7 @@ IF_DBG
     if (seg->hash != crc32Calculate ((const uint8_t*)seg->code, seg->size))
     {
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
-        log_err ("verification error", "code segment hash is different");
+        log_err ("verification error", "code segment checksum is different");
     }
 )
 
@@ -171,8 +171,8 @@ Erracc_t buildRAMseg (RAMseg* dst, size_t size)
     dst->memory = (char*)calloc (size, sizeof (char));
     if (!dst->memory)
     {
-        ErrAcc |= VM_ERRCODE (VM_ALLOCATIONERR);
-        log_err ("internal error", "calloc returned NULL");
+        ErrAcc |= VM_ERRCODE (VM_ALLOCERR);
+        log_err ("allocation error", "calloc returned NULL");
         return ErrAcc;
     }
 

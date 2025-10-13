@@ -8,29 +8,29 @@ VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize)
     VM* vm = (VM*)calloc(1, sizeof (VM));
     if (!vm)
     {
-        ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
-        log_err ("internal error", "calloc returned NULL");
+        ErrAcc |= VM_ERRCODE ((VM_ALLOCERR | VM_ERRONINIT));
+        log_err ("allocation error", "calloc returned NULL");
         return NULL;
     }
 
     if (buildCodeseg (&vm->codeseg, bcname))
     {
         ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
-        log_err ("internal error", "code segment wasnt initialized");
+        log_err ("init error", "code segment wasnt initialized");
         return NULL;
     }
 
     if (buildRAMseg (&vm->memseg, ramSize))
     {
         ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
-        log_err ("internal error", "memory segment wasnt initialized");
+        log_err ("init error", "memory segment wasnt initialized");
         return NULL;
     }
     vm->stack = stackInit (stackSize, sizeof (operand_t));
     if (ErrAcc)
     {
         ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
-        log_err ("internal error", "stack segment wasnt initialized");
+        log_err ("init error", "stack segment wasnt initialized");
         return NULL;
     }
 
@@ -38,7 +38,7 @@ VM* VMInit (const char* bcname, size_t stackSize, size_t ramSize)
     if (ErrAcc)
     {
         ErrAcc |= VM_ERRCODE (VM_ERRONINIT);
-        log_err ("internal error", "call stack segment wasnt initialized");
+        log_err ("init error", "call stack segment wasnt initialized");
         return NULL;
     }
 
@@ -86,27 +86,27 @@ Erracc_t VMVerify (const VM* vm)
 
     if (codesegVerify (&vm->codeseg))
     {
-        ErrAcc |= VM_ERRCODE (VM_CODESEGVERIFICATION);
+        ErrAcc |= VM_ERRCODE (VM_CODESEGERR);
         log_err ("verification error", "code segment corrupted");
     }
 
     if (RAMsegverify (&vm->memseg))
     {
-        ErrAcc |= VM_ERRCODE (VM_RAMVERIFICATION);
+        ErrAcc |= VM_ERRCODE (VM_RAMERR);
         log_err ("verification error", "ram segment corrupted");
     }
 
     Erracc_t stackST = stackVerify (vm->stack);
     if (stackST != 0)
     {
-        ErrAcc |= VM_ERRCODE (VM_STACKVERIFICATION);
+        ErrAcc |= VM_ERRCODE (VM_STACKERR);
         log_err ("verification error", "stack failed verification with code: %llu", stackST);
     }
 
     Erracc_t callStackST = stackVerify (vm->callstack);
     if (callStackST != 0)
     {
-        ErrAcc |= VM_ERRCODE (VM_STACKVERIFICATION);
+        ErrAcc |= VM_ERRCODE (VM_STACKERR);
         log_err ("verification error", "call stack failed verification with code: %llu", callStackST);
     }
 

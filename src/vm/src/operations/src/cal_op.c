@@ -9,7 +9,6 @@ Erracc_t call (VM* vm)
 
     if (vm->codeseg.code > retaddr || retaddr > vm->codeseg.code + vm->codeseg.size)
     {
-        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
         log_err ("runtime error", "segfault");
         return ErrAcc;
@@ -29,7 +28,6 @@ Erracc_t ret (VM* vm)
 
     if (vm->codeseg.code > retaddr || retaddr > vm->codeseg.code + vm->codeseg.size)
     {
-        VMdump (vm);
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
         log_err ("runtime error", "segfault");
         return ErrAcc;

@@ -6,8 +6,6 @@ void draw (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    vm->codeseg.rip += sizeof (opcode_t);
-
 #ifdef _WIN32
     system ("cls");
 #else
@@ -25,6 +23,8 @@ void draw (VM* vm)
         }
         printf ("\n");
     }
+
+    vm->codeseg.rip += sizeof (opcode_t);
 }
 
 void dmp (VM* vm)

@@ -9,7 +9,7 @@ static Erracc_t runThread (const char* bcname)
     VM* vm = VMInit (bcname, STACKSIZE, RAMSIZE);
     if (!vm)
     {
-        log_err ("internal error", "vm wasnt initialized");
+        log_err ("init error", "vm wasnt initialized");
         return ErrAcc;
     }
 
@@ -57,8 +57,8 @@ static Erracc_t runThread (const char* bcname)
                 log_srcerr (
                     bcname,
                     instrc,
-                    "bytecode corruption",
-                    "unknown opcode: \"%0X\"",
+                    "syntax error",
+                    "operation not found: \"%0X\"",
                     *vm->codeseg.rip
                 );
                 VMdump (vm);

@@ -18,9 +18,8 @@ Erracc_t mov (VM* vm)
             if (MODDSTMASK <= NUM_REGS) stackPop (vm->stack, &vm->regs[MODDSTMASK]);
             else
             {
-                VMdump (vm);
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-                log_err ("error", "bytecode corrupted");
+                log_err ("syntax error", "trying to mov data into unknown register");
                 return ErrAcc;
             }
             break;
@@ -33,12 +32,9 @@ Erracc_t mov (VM* vm)
                 #pragma GCC diagnostic ignored "-Wcast-align"
 
                 ptr = *(const pointer_t*)vm->codeseg.rip;
-                
-                vm->codeseg.rip += sizeof (pointer_t);
 
                 if (ptr >= vm->memseg.size)
                 {
-                    VMdump (vm);
                     ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
                     log_err ("runtime error", "segfault ptr: %llu > size: %zu", ptr, vm->memseg.size);
                 }
@@ -47,10 +43,18 @@ Erracc_t mov (VM* vm)
 
                 #pragma GCC diagnostic pop
 
+                vm->codeseg.rip += sizeof (pointer_t);
                 break;
             }
             else
             {
+                if (MODDSTMASK >= NUM_REGS)
+                {
+                    ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
+                    log_err ("syntax error", "trying to mov data into unknown register");
+                    return ErrAcc;
+                }
+
                 #pragma GCC diagnostic push
                 #pragma GCC diagnostic ignored "-Wcast-align"
 
@@ -64,9 +68,15 @@ Erracc_t mov (VM* vm)
         case OFF:
             if (MODDSTMASK == DISP64)
             {
-                VMdump (vm);
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-                log_err ("bytecode corruption", "impossible r/m field in mod");
+                log_err ("syntax error", "offset and disp64 combined in mov r/m mod");
+                return ErrAcc;
+            }
+
+            if (MODDSTMASK >= NUM_REGS)
+            {
+                ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
+                log_err ("syntax error", "trying to mov data into unknown register");
                 return ErrAcc;
             }
 
@@ -75,11 +85,8 @@ Erracc_t mov (VM* vm)
 
             ptr = (pointer_t)(*(const offset_t*)vm->codeseg.rip + vm->regs[MODDSTMASK]);
 
-            vm->codeseg.rip += sizeof (offset_t);
-
             if (ptr >= vm->memseg.size)
             {
-                VMdump (vm);
                 ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
                 log_err ("runtime error", "segfault");
             }
@@ -88,14 +95,13 @@ Erracc_t mov (VM* vm)
 
             #pragma GCC diagnostic pop
 
-            vm->codeseg.rip += sizeof (pointer_t);
+            vm->codeseg.rip += sizeof (offset_t);
             break;
 
 
         default:
-            VMdump (vm);
             ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-            log_err ("bytecode corruption", "cant parse operands");
+            log_err ("syntax error", "unknown mov r/m mod");
             return ErrAcc;
     }
 

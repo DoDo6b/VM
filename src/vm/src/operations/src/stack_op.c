@@ -6,14 +6,12 @@ Erracc_t in (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    vm->codeseg.rip += sizeof (opcode_t);
-
     operand_t operand = 0;
-
     while (!scanf ("%lld", &operand));
 
     stackPush (vm->stack, &operand);
 
+    vm->codeseg.rip += sizeof (opcode_t);
     return ErrAcc;
 }
 
@@ -37,9 +35,8 @@ Erracc_t push (VM* vm)
             if (MODSRCMASK <= NUM_REGS) stackPush (vm->stack, &vm->regs[MODSRCMASK]);
             else
             {
-                VMdump (vm);
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
-                log_err ("error", "unknown reg (mod: %c)", mod);
+                log_err ("syntax error", "trying to push data from unknown register");
                 return ErrAcc;
             }
             break;
@@ -54,7 +51,6 @@ Erracc_t push (VM* vm)
 
                 if (ptr >= vm->memseg.size)
                 {
-                    VMdump (vm);
                     ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
                     log_err ("runtime error", "segfault");
                 }
@@ -68,6 +64,13 @@ Erracc_t push (VM* vm)
             }
             else
             {
+                if (MODSRCMASK >= NUM_REGS)
+                {
+                    ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
+                    log_err ("syntax error", "trying to push data from unknown register");
+                    return ErrAcc;
+                }
+
                 #pragma GCC diagnostic push
                 #pragma GCC diagnostic ignored "-Wcast-align"
 
@@ -84,6 +87,13 @@ Erracc_t push (VM* vm)
                 VMdump (vm);
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                 log_err ("error", "impossible r/m field in mod");
+                return ErrAcc;
+            }
+
+            if (MODSRCMASK >= NUM_REGS)
+            {
+                ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
+                log_err ("syntax error", "trying to push data from unknown register");
                 return ErrAcc;
             }
 
@@ -121,19 +131,19 @@ void out (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    vm->codeseg.rip += sizeof (opcode_t);
-
     operand_t valOnTop = 0;
     stackTop (vm->stack, &valOnTop);
  
     printf ("%lld\n", valOnTop);
+
+    vm->codeseg.rip += sizeof (opcode_t);
 }
 
 void pop (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
-    vm->codeseg.rip += sizeof (opcode_t);
-
     stackPop (vm->stack, NULL);
+
+    vm->codeseg.rip += sizeof (opcode_t);
 }
