@@ -25,7 +25,7 @@ typedef struct
 
 enum OP_codes
 {
-    HALT = 0X66,
+    HALT =  0X66,
 
     IN    = 0X5E,
 

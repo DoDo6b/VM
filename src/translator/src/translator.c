@@ -10,12 +10,23 @@ static FILE* fileOpen (const char* fname, const char* attributes)
 
     if (!stream)
     {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_FOPENERR);
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_FSERR);
         log_err ("fopen error", "cant open input file: %s", stream);
         return NULL;
     }
 
     return stream;
+}
+
+static bool sSpaceLines (Buffer* buf)
+{
+    assertStrict (bufVerify (buf, 0) == 0 && buf->mode == BUFREAD,  "bufR failed verification");
+
+    while (*buf->bufpos == '\0') 
+    {
+        if (bufNLine (buf) == -1) return false;
+    }
+    return true;
 }
 
 
@@ -53,7 +64,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
     
     instruction_t instruction = {0};
 
-    while (bufScanf (bufR, "%s", instruction) > 0)
+    while (sSpaceLines (bufR) && bufScanf (bufR, "%s", instruction) > 0)
     {
         if (*instruction == ';')
         {
@@ -97,8 +108,8 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
             default:  decomposeSpecial (instruction, bufR, bufW, *instrc);
         }
         *instrc += 1;
-
         log_string ("}\n");
+
 
         bufSSpaces (bufR);
         if (bufpeekc (bufR) != '\0' && bufpeekc (bufR) != ';')
@@ -116,19 +127,8 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         if (ErrAcc)
         {
             log_err ("runtime error", "aborting");
-            break;
+            return ErrAcc;
         }
-
-        bool stop = false;
-        while (*bufR->bufpos == ' ' || *bufR->bufpos == '\0') 
-        {
-            if (bufNLine (bufR) == -1)
-            {
-                stop = true;
-                break;
-            }
-        }
-        if (stop) break;
     }
 
     if (remainingUnprocJMPReq () != 0)
@@ -136,7 +136,9 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         jmpWLdump ();
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
         log_err ("syntax error", "missing jmptags");
+        return ErrAcc;
     }
+
 
     return ErrAcc;
 }
@@ -145,7 +147,7 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 
 
 
-uint64_t translate (const char* input, const char* output)
+Erracc_t translate (const char* input, const char* output)
 {
     assertStrict (input,  "received NULL");
     assertStrict (output, "received NULL");
@@ -153,8 +155,22 @@ uint64_t translate (const char* input, const char* output)
     FILE* listing = fileOpen (input, "r");
     FILE* bin     = fileOpen (output, "wb+");
 
+    if (fileSize (listing) == 0)
+    {
+        fclose (listing);
+        fclose (bin);
+        log_err ("error", "file is empty");
+        return ErrAcc;
+    }
+
     Buffer*        bufR = bufInit ((size_t)fileSize (listing));
     Buffer*        bufW = bufInit (BUFFERSIZE);
+    if (!bufR || !bufW)
+    {
+        log_err ("init error", "buffers wasnt initialized");
+        return ErrAcc;
+    }
+
     bufSetStream (bufR, input,  listing, BUFREAD);
     bufSetStream (bufW, output, bin,     BUFWRITE);
 
@@ -169,13 +185,10 @@ uint64_t translate (const char* input, const char* output)
         .instrc = 0,
     };
 
-    if (decompose (bufR, bufW, &header.instrc))
-    {
-        log_err ("translation error", "translation has ended with code: %llu", ErrAcc);
-        exit (EXIT_FAILURE);
-    }
 
-    
+    decompose (bufR, bufW, &header.instrc);
+
+
     log_string ("<grn>translated %llu opcode(s)<dft>\n", header.instrc);
 
     bufFree (bufW);

@@ -3,13 +3,13 @@
 
 Erracc_t writeOPcode (Buffer* bufW, opcode_t opcode)
 {
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
 
     if (bufWrite (bufW, &opcode, sizeof (opcode_t)) == 0)
     {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-        log_err ("writing error", "cant write into buffer");
-        IMSTP ( exit (EXIT_FAILURE); )
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+        log_err ("buffer error", "cant write into buffer");
+        return ErrAcc;
     }
     log_string ("has wrote: %0X\n", opcode);
     return ErrAcc;
@@ -17,10 +17,10 @@ Erracc_t writeOPcode (Buffer* bufW, opcode_t opcode)
 
 Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
 {
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
-    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
 
-    writeOPcode (bufW, PUSH);
+    if (writeOPcode (bufW, PUSH)) return ErrAcc;
 
     opcode_t mod = 0;
 
@@ -31,17 +31,22 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
     {
         mod = REG << 6;
         mod += (opcode_t)(translateReg(bufR, instrc) << 3);
-        writeOPcode (bufW, mod);
+                          if (ErrAcc) return ErrAcc;
+
+        if (writeOPcode (bufW, mod)) return ErrAcc;
     }
     else if (isdigit ((int)ch))
     {
         mod = IMM << 6;
-        writeOPcode (bufW, mod);
+        if (writeOPcode (bufW, mod)) return ErrAcc;
+
         operand_t operand = translateOperand (bufR, instrc);
+                            if (ErrAcc) return ErrAcc;
+
         if (bufWrite (bufW, &operand, sizeof (operand_t)) == 0)
         {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-            log_err ("writing error", "cant write into buffer");
+            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+            log_err ("buffer error", "cant write into buffer");
             return ErrAcc;
         }
     }
@@ -50,23 +55,24 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
         offset_t offset = INT64_MIN;
         opcode_t reg    = UINT8_MAX;
         decomposeMemcall (bufR, &reg, &offset, instrc);
+        if (ErrAcc) return ErrAcc;
 
         if (reg == UINT8_MAX)
         {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
-            log_err ("internal error", "cant decompose bracets");
+            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_UNKERR);
+            log_err ("unknown error", "something went wrong");
             return ErrAcc;
         }
 
         if (reg != DISP64 && offset != INT64_MIN)
         {
             mod = (OFF << 6) | (opcode_t)((reg & 0x07) << 3);
-            writeOPcode (bufW, mod);
+            if (writeOPcode (bufW, mod)) return ErrAcc;
 
             if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
             {
-                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-                log_err ("writing error", "cant write into buffer");
+                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+                log_err ("buffer error", "cant write into buffer");
                 return ErrAcc;
             }
 
@@ -75,14 +81,14 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
         else
         {
             mod = (MEM << 6) | (opcode_t)((reg & 0x07) << 3);
-            writeOPcode (bufW, mod);
+            if (writeOPcode (bufW, mod)) return ErrAcc;
 
             if (offset != INT64_MIN && reg == DISP64)
             {
                 if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
                 {
-                    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-                    log_err ("writing error", "cant write into buffer");
+                    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+                    log_err ("buffer error", "cant write into buffer");
                     return ErrAcc;
                 }
             }
@@ -108,10 +114,10 @@ Erracc_t writePush (Buffer* bufW, Buffer* bufR, size_t instrc)
 
 Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
 {
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
-    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
 
-    writeOPcode (bufW, MOV);
+    if (writeOPcode (bufW, MOV)) return ErrAcc;
 
     opcode_t mod = 0;
     bufSSpaces (bufR);
@@ -121,10 +127,11 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
         offset_t offset = INT64_MIN;
         opcode_t reg    = UINT8_MAX;
         decomposeMemcall (bufR, &reg, &offset, instrc);
+        if (ErrAcc) return ErrAcc;
 
         if (reg == UINT8_MAX)
         {
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
+            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_UNKERR);
             log_err ("internal error", "cant decompose bracets");
             return ErrAcc;
         }
@@ -132,12 +139,12 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
         if (reg != DISP64 && offset != INT64_MIN)
         {
             mod = (OFF << 6) | (reg & 0x07);
-            writeOPcode (bufW, mod);
+            if (writeOPcode (bufW, mod)) return ErrAcc;
 
             if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
             {
-                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-                log_err ("writing error", "cant write into buffer");
+                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+                log_err ("buffer error", "cant write into buffer");
                 return ErrAcc;
             }
 
@@ -146,14 +153,14 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
         else
         {
             mod = (MEM << 6) | (reg & 0x07);
-            writeOPcode (bufW, mod);
+            if (writeOPcode (bufW, mod)) return ErrAcc;
 
             if (offset != INT64_MIN && reg == DISP64)
             {
                 if (bufWrite (bufW, &offset, sizeof (offset_t)) == 0)
                 {
-                    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-                    log_err ("writing error", "cant write into buffer");
+                    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+                    log_err ("buffer error", "cant write into buffer");
                     return ErrAcc;
                 }
             }
@@ -167,7 +174,9 @@ Erracc_t writeMov (Buffer* bufW, Buffer* bufR, size_t instrc)
         {
             mod = REG << 6;
             mod += translateReg(bufR, instrc);
-            writeOPcode (bufW, mod);
+                   if (ErrAcc) return ErrAcc;
+
+            if (writeOPcode (bufW, mod)) return ErrAcc;
         }
         else
         {

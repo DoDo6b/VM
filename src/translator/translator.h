@@ -18,7 +18,7 @@
 #define BUFFERSIZE BUFSIZ
 
 
-uint64_t translate (const char* input, const char* output);
+Erracc_t translate (const char* input, const char* output);
 
 
 #endif

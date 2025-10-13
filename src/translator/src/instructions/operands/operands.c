@@ -17,7 +17,6 @@ operand_t translateOperand (Buffer* bufR, size_t instrc)
             "syntax error",
             "no operand found"
         );
-        exit (EXIT_FAILURE);
     }
     
     return operand;
@@ -75,7 +74,6 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
             "syntax error",
             "no operand found"
         );
-        exit (EXIT_FAILURE);
     }
 
     opcode_t reg = decomposeReg (str, bufR->name, instrc);
@@ -90,7 +88,6 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
             "syntax error",
             "no operand found"
         );
-        exit (EXIT_FAILURE);
     }
 
     return reg;
@@ -119,7 +116,7 @@ Erracc_t decomposeMemcall (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t
             "no operand found: %s",
             str
         );
-        exit (EXIT_FAILURE);
+        return ErrAcc;
     }
 
     char          sign   =  0;
@@ -153,7 +150,7 @@ Erracc_t decomposeMemcall (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t
         if (*reg == DISP64)
         {
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-            log_err ("syntax error", "you cant use RBP here");
+            log_err ("syntax error", "you cant use RBP with offset");
             *reg = UINT8_MAX;
             return ErrAcc;
         }

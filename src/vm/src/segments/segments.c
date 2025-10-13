@@ -46,7 +46,7 @@ Erracc_t buildCodeseg (CodeSeg* seg, const char* bcname)
     long size = fileSize (stream) - (ssize_t)sizeof (Header);
     if (size <= 0)
     {
-        ErrAcc |= VM_ERRCODE (VM_UNKNOWNERR);
+        ErrAcc |= VM_ERRCODE (VM_UNKERR);
         log_err ("fs error", "file size < 0");
         return ErrAcc;
     }

@@ -11,7 +11,7 @@ int main (int argc, char** argv)
 
     if (argc < 3)
     {
-        log_err ("error", "no input file, usage: %s *input file* *output file*", argv[0]);
+        log_err ("call error", "no input file, usage: %s *input file* *output file*", argv[0]);
         exit (EXIT_FAILURE);
     }
 
@@ -19,7 +19,7 @@ int main (int argc, char** argv)
     ErrAcc |= translate (argv[1], argv[2]);
     if (ErrAcc)
     {
-        log_err ("runtime error", "execution has ended with code %llu", ErrAcc);
+        log_err ("translation error", "translation has ended with code: %llu", ErrAcc);
         exit (EXIT_FAILURE);
     }
 

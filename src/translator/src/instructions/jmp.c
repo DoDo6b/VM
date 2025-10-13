@@ -36,7 +36,9 @@ Erracc_t jmpWLdump ()
     log_string ("}\n");
 
     log_string ("<blu>jmp requests list dump(%llu in total):<dft>\n{\n", JMPWaitingList.jmpRequestsTotal);
-    for (size_t i = 0; i < JMPTABLE_SIZ; i++) if (JMPWaitingList.jmprequests[i].opcode != 0) log_string ("  %lu: <grn>%0X<dft> <cyn>0x%p<dft>\n", JMPWaitingList.jmprequests[i].hash, JMPWaitingList.jmprequests[i].opcode, JMPWaitingList.jmptable[i].absptr);
+    for (size_t i = 0; i < JMPTABLE_SIZ; i++) if (JMPWaitingList.jmprequests[i].opcode != 0) 
+        log_string ("  %lu: <grn>%0X<dft> <cyn>0x%p<dft>\n", JMPWaitingList.jmprequests[i].hash, JMPWaitingList.jmprequests[i].opcode, JMPWaitingList.jmptable[i].absptr);
+    
     log_string ("}\n");
 
     return ErrAcc;
@@ -45,14 +47,14 @@ Erracc_t jmpWLdump ()
 
 Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
 {
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     assertStrict (str, "received NULL");
 
     instruction_t jmptag = {0};
     char key = 0;
     if (sscanf (str, "%[^:]%c", jmptag, &key) < 1 || key != ':')
     {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
         log_err ("internal error", "sscanf cant find jmptag");
         return ErrAcc;
     }
@@ -76,8 +78,8 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
 
             if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
             {
-                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-                log_err ("writing error", "cant write into buffer");
+                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+                log_err ("buffer error", "cant write into buffer");
                 return ErrAcc;
             }
 
@@ -95,6 +97,7 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
             bufW->bufpos = bufWpos;
 
             JMPWaitingList.jmprequests[i].hash          = 0;
+            JMPWaitingList.jmprequests[i].opcode        = 0;
             JMPWaitingList.jmprequests[i].absBackJMPptr = 0;
             JMPWaitingList.jmpRequestsTotal--;
         }
@@ -115,8 +118,8 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
 
 Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condition)
 {
-    assertStrict (bufVerify (bufW, 0) == 0, "buffer failed verification");
-    assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
 
     opcode_t jmpopcode = 0;
 
@@ -134,7 +137,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
         
         default:
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
-            log_err ("internal error", "wrong type of JMP");
+            log_err ("internal error", "unknown type of JMP");
             return ErrAcc;
     }
 
@@ -154,7 +157,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
             bufR->name,
             instrC + 1,
             "syntax error",
-            "no jmp point found"
+            "no jmp tag found"
         );
         return ErrAcc;
     }
@@ -167,9 +170,8 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
             opcode.offset = (offset_t)(JMPWaitingList.jmptable[i].absptr - (pointer_t)(bufW->bufpos - bufW->buffer) - 1);
             if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
             {
-                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-                log_err ("writing error", "cant write into buffer");
-                IMSTP ( exit (EXIT_FAILURE); )
+                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+                log_err ("buffer error", "cant write into buffer");
             }
 
             log_string
@@ -210,8 +212,8 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
 
     if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
     {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_WRITINGERROR);
-        log_err ("writing error", "cant write into buffer");
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
+        log_err ("buffer error", "cant write into buffer");
     }
 
     return ErrAcc;
@@ -222,8 +224,7 @@ size_t remainingUnprocJMPReq ()
     size_t requests = 0;
     for (size_t i = 0; i < JMPTABLE_SIZ; i++) 
     {
-        if (JMPWaitingList.jmprequests[i].hash != 0 && JMPWaitingList.jmprequests[i].absBackJMPptr != 0) requests++;
+        if (JMPWaitingList.jmprequests[i].hash != 0 || JMPWaitingList.jmprequests[i].opcode) requests++;
     }
-    if (requests > 0) jmpWLdump ();
     return requests;
 }

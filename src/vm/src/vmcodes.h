@@ -31,7 +31,7 @@ typedef enum
     VM_DIVISIONBYZERO,
     VM_SEGFAULT,
 
-    VM_UNKNOWNERR,
+    VM_UNKERR,
 }VMEC;
 
 
