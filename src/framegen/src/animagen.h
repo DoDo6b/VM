@@ -1,5 +1,5 @@
-#ifndef FRAMEGEN_H
-#define FRAMEGEN_H
+#ifndef ANIMAGEN_H
+#define ANIMAGEN_H
 
 
 #include "../../included/logger/logger.h"

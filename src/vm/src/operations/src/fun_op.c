@@ -1,8 +1,7 @@
 #include <unistd.h>
 #include "../operations.h"
 
-#define WIDTH     100
-#define SLEEPTIME 1000000
+#define SLEEPTIME 100000
 
 void draw (VM* vm)
 {
@@ -16,14 +15,12 @@ void draw (VM* vm)
 
     const unsigned char* ptr = (const unsigned char*)vm->memseg.memory;
 
-    for (size_t y = 0; y < vm->memseg.size; y += WIDTH, ptr += WIDTH)
+    for (; ptr < (const unsigned char*)vm->memseg.memory + vm->memseg.size; ptr++)
     {
-        for (size_t x = 0; x < WIDTH && y + x < vm->memseg.size; x++)
-        {
-           if (*(ptr + x) != 0) printf ("%c", *(ptr + x));
-           else printf (" ");
-        }
+        if (*ptr != 0) printf ("%c", *ptr);
+        else printf (" ");
     }
+    printf ("\n");
 
     usleep (SLEEPTIME);
 

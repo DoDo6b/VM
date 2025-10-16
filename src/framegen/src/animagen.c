@@ -1,4 +1,4 @@
-#include "framegen.h"
+#include "animagen.h"
 
 typedef struct
 {
@@ -87,7 +87,7 @@ static void framegen (Buffer* bufR, Buffer* bufW, int w, int h)
     assertStrict (w > 0 && h > 0, "w < 0 || h < 0");
 
     bufFlush (bufR);
-    if (bufRead  (bufR, w * h) != (size_t)(w * h))
+    if (bufRead  (bufR, (size_t)(w * h)) != (size_t)(w * h))
     {
         log_err ("warning", "cropped frame detected");
     }
@@ -118,6 +118,8 @@ size_t animationGen (const char* gif, int w, int h)
 {
     assertStrict (gif, "received NULL");
     assertStrict (w > 0 && h > 0, "w < 0 || h < 0");
+
+    w++;
 
     Descriptors descr = {0};
     if (init (gif, w, h, &descr) != 0)

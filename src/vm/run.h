@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 
-Erracc_t run (const char* fname);
+Erracc_t run (const char* fname, size_t stackSiz, size_t ramSiz);
 
 
 #endif

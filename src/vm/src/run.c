@@ -4,9 +4,9 @@
 #include "../run.h"
 
 
-static Erracc_t runThread (const char* bcname)
+static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
 {
-    VM* vm = VMInit (bcname, STACKSIZE, RAMSIZE);
+    VM* vm = VMInit (bcname, stackSiz, ramSiz);
     if (!vm)
     {
         log_err ("init error", "vm wasnt initialized");
@@ -79,11 +79,11 @@ static Erracc_t runThread (const char* bcname)
 }
 
 
-Erracc_t run (const char* input)
+Erracc_t run (const char* input, size_t stackSiz, size_t ramSiz)
 {
     log_string ("<grn>starting...<dft>\n");
 
-    if (runThread (input) == 0) log_string ("<grn>Work is done<dft>\n");
+    if (runThread (input, stackSiz, ramSiz) == 0) log_string ("<grn>Work is done<dft>\n");
 
     return ErrAcc;
 }
