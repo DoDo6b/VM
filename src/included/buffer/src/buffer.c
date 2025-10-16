@@ -35,6 +35,8 @@ void bufFree (Buffer* buf)
 
     if ((vericode & BUFNULL) == 0)
     {
+        if (buf->name) free (buf->name);
+        
         #ifdef SECURE
         memset (buf, 0XCC, sizeof (Buffer));
         #endif
@@ -100,7 +102,7 @@ Erracc_t bufDump (Buffer* buf)
         buf->stream
     );
     if (buf->name) log_string ("name:    %s\n", buf->name);
-    memBlockDump (buf->buffer, NULL, buf->size, 64);
+    memBlockDump (buf->buffer, buf->bufpos, buf->size, 64);
     
     return ErrAcc;
 }
@@ -119,7 +121,17 @@ int bufSetStream (Buffer* buf, const char* name, FILE* stream, BufMode_t mode)
 
     buf->stream = stream;
     buf->bufpos = buf->buffer;
-    buf->name = name;
+
+    if (name != NULL)
+    {
+        buf->name = (char*)calloc (strlen (name), sizeof (char));
+        if (buf->name == NULL)
+        {
+            log_err ("runtime error", "cant allocate str buffer");
+            return -1;
+        }
+        memcpy (buf->name, name, strlen (name));
+    }
     
     #ifdef SECURE
     memset (buf->buffer, 0, buf->size);
@@ -234,7 +246,7 @@ size_t bufLSplit (Buffer* buf)
     return replaced;
 }
 
-size_t bufWrite (Buffer* buf, void* src, size_t size)
+size_t bufWrite (Buffer* buf, const void* src, size_t size)
 {
     assertStrict (bufVerify (buf, 0) == 0, "failed buffer verification");
     assertStrict (buf->mode == BUFWRITE, "incompatible buffer mode");

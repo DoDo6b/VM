@@ -1,6 +1,8 @@
+#include <unistd.h>
 #include "../operations.h"
 
-#define WIDTH  100
+#define WIDTH     100
+#define SLEEPTIME 1000000
 
 void draw (VM* vm)
 {
@@ -21,8 +23,9 @@ void draw (VM* vm)
            if (*(ptr + x) != 0) printf ("%c", *(ptr + x));
            else printf (" ");
         }
-        printf ("\n");
     }
+
+    usleep (SLEEPTIME);
 
     vm->codeseg.rip += sizeof (opcode_t);
 }
