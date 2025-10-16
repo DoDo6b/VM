@@ -29,7 +29,7 @@ static int init (const char* gif, int w, int h, Descriptors* descr)
     bufSetStream (descr->srcBuf, gif, descr->source, BUFREAD);
 
 
-    char* outfname = (char*)calloc (strlen (gif) + 7, sizeof (char));
+    char* outfname = (char*)calloc (strlen (gif) + sizeof (".artout"), sizeof (char));
     if (outfname == NULL)
     {
         log_err ("alloc errror", "cant allocate str buffer");
@@ -95,7 +95,7 @@ static void framegen (Buffer* bufR, Buffer* bufW, int w, int h)
     char buf[16] = {0};
     for (int i = 0; i < w * h; i++)
     {
-        itoa ((int)bufGetc (bufR), buf, 10);
+        sprintf (buf, "%d", (int)bufGetc (bufR));
 
         bufWrite (bufW, PUSH,   sizeof (PUSH) - 1);
         bufWrite (bufW, buf,    strlen (buf));
@@ -104,7 +104,7 @@ static void framegen (Buffer* bufR, Buffer* bufW, int w, int h)
         bufWrite (bufW, MOV,    sizeof (MOV) - 1);
         bufWrite (bufW, "[",    sizeof ("[") - 1);
 
-        itoa (i, buf, 10);
+        sprintf (buf, "%d", i);
         bufWrite (bufW, buf,    strlen (buf));
         
         bufWrite (bufW, "]\n",  sizeof ("]\n") - 1);
@@ -126,7 +126,7 @@ size_t animationGen (const char* gif, int w, int h)
         return 0;
     }
 
-    size_t frames = fileSize (descr.source) / (unsigned long)(w * h);
+    size_t frames = (unsigned long)fileSize (descr.source) / (unsigned long)(w * h);
     log_string ("filesize: %lu, framesize: %lu, frames total: %zu\n", fileSize (descr.source), (unsigned long)(w * h), frames);
 
     for (size_t f = 0; f < frames; f++)
