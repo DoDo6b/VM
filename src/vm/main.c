@@ -2,12 +2,13 @@
 #include "run.h"
 
 #define LOGFILE "log.html"
+#define STACKSIZE 2048
+#define RAMSIZE 7140
 
 
 int main (int argc, char** argv)
 {
     log_start (LOGFILE);
-    log_string ("call: %s %s\n", argv[0], argv[1]);
 
     if (argc < 2)
     {
@@ -16,7 +17,7 @@ int main (int argc, char** argv)
     }
 
 
-    ErrAcc |= run (argv[1]);
+    ErrAcc |= run (argv[1], STACKSIZE, RAMSIZE);
     if (ErrAcc)
     {
         log_err ("runtime error", "execution has ended with code %llu", ErrAcc);

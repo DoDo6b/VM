@@ -11,7 +11,7 @@
 #include "../../translatorcodes.h"
 
 
-enum RegisterHash
+enum RegisterHash   // these hashes could be calculated with gethash.exe from kutils
 {
     RAX_HASH = 193504464,
     RCX_HASH = 193504530,

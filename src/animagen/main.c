@@ -1,4 +1,4 @@
-#include "src/framegen.h"
+#include "src/animagen.h"
 
 #define LOG "stdout"
 
