@@ -3,7 +3,7 @@
 
 #define LOGFILE "log.html"
 #define STACKSIZE 2048
-#define RAMSIZE 7140
+#define RAMSIZE 11844
 
 
 int main (int argc, char** argv)

@@ -9,7 +9,7 @@ typedef struct
 }Descriptors;
 
 
-static int init (const char* gif, int w, int h, Descriptors* descr)
+static int init (const char* gif, Descriptors* descr)
 {
     assertStrict (gif, "received NULL");
 
@@ -20,7 +20,19 @@ static int init (const char* gif, int w, int h, Descriptors* descr)
         return -1;
     }
 
-    descr->srcBuf = bufInit ((size_t)(w * h));
+    char testL[BUFSIZ] = {};
+    fgets (testL, sizeof (testL), descr->source);
+    size_t w = strlen (testL);
+    size_t h = 0;
+    while (*testL != '\n')
+    {
+        fgets (testL, sizeof (testL), descr->source);
+        h++;
+    }
+    fseek (descr->source, 0, SEEK_SET);
+    log_string ("framew: %llu frameh: %llu\n", w, h);
+
+    descr->srcBuf = bufInit (w * h);
     if (descr->srcBuf == NULL)
     {
         log_err ("alloc error", "cant create input buffer");
@@ -80,20 +92,22 @@ static void release (Descriptors* descr)
 }
 
 
-static void framegen (Buffer* bufR, Buffer* bufW, int w, int h)
+static void framegen (Buffer* bufR, Buffer* bufW)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
-    assertStrict (w > 0 && h > 0, "w < 0 || h < 0");
 
     bufFlush (bufR);
-    if (bufRead  (bufR, (size_t)(w * h)) != (size_t)(w * h))
+    size_t frame = bufRead  (bufR, 0);
+    fseek (bufR->stream, 1, SEEK_CUR);
+
+    if (frame != bufR->size)
     {
         log_err ("warning", "cropped frame detected");
     }
 
     char buf[16] = {0};
-    for (int i = 0; i < w * h; i++)
+    for (size_t i = 0; i < frame; i++)
     {
         sprintf (buf, "%d", (int)bufGetc (bufR));
 
@@ -104,7 +118,7 @@ static void framegen (Buffer* bufR, Buffer* bufW, int w, int h)
         bufWrite (bufW, MOV,    sizeof (MOV) - 1);
         bufWrite (bufW, "[",    sizeof ("[") - 1);
 
-        sprintf (buf, "%d", i);
+        sprintf (buf, "%zu", i);
         bufWrite (bufW, buf,    strlen (buf));
         
         bufWrite (bufW, "]\n",  sizeof ("]\n") - 1);
@@ -114,27 +128,24 @@ static void framegen (Buffer* bufR, Buffer* bufW, int w, int h)
 }
 
 
-size_t animationGen (const char* gif, int w, int h)
+size_t animationGen (const char* gif)
 {
     assertStrict (gif, "received NULL");
-    assertStrict (w > 0 && h > 0, "w < 0 || h < 0");
 
-    w++;
-
-    Descriptors descr = {0};
-    if (init (gif, w, h, &descr) != 0)
+    Descriptors descr = {};
+    if (init (gif, &descr) != 0)
     {
         log_err ("init error", "something went wrong");
         return 0;
     }
 
-    size_t frames = (unsigned long)fileSize (descr.source) / (unsigned long)(w * h);
-    log_string ("filesize: %lu, framesize: %lu, frames total: %zu\n", fileSize (descr.source), (unsigned long)(w * h), frames);
+    size_t frames = (size_t)fileSize (descr.source) / descr.srcBuf->size;
+    log_string ("filesize: %ld, framesize: %llu, frames total: %zu\n", fileSize (descr.source), descr.srcBuf->size, frames);
 
     for (size_t f = 0; f < frames; f++)
     {
-        framegen (descr.srcBuf, descr.dstBuf, w, h);
-        log_string ("<ylw>Frame %llu was transfered<dft>\n", f);
+        framegen (descr.srcBuf, descr.dstBuf);
+        log_string ("<ylw>Frame %zu was transfered<dft>\n", f);
     }
     bufWrite (descr.dstBuf, HALT, sizeof (HALT) - 1);
 

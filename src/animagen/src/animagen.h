@@ -11,7 +11,7 @@
 #define DRAW "draw\n"
 #define HALT "halt\n"
 
-size_t animationGen (const char* gif, int w, int h);
+size_t animationGen (const char* gif);
 
 
 #endif

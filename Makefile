@@ -15,7 +15,7 @@ COMMON_SRCS = $(shell find src/included src/defines -name '*.c')
 
 TRANSLATE_SRCS = $(shell find src/translator -name '*.c')
 VM_SRCS = $(shell find src/vm -name '*.c')
-AGEN_SRCS = $(shell find src/framegen -name '*.c')
+AGEN_SRCS = $(shell find src/animagen -name '*.c')
 
 TRANSLATE_OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(TRANSLATE_SRCS) $(COMMON_SRCS))
 VM_OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(VM_SRCS) $(COMMON_SRCS))
