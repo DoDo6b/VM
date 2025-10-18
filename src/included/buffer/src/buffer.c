@@ -236,7 +236,7 @@ size_t bufLSplit (Buffer* buf)
 
     for (size_t i = 0; i < buf->len; i++)
     {
-        if (buf->buffer[i] == '\n')
+        if (buf->buffer[i] == '\n' || buf->buffer[i] == '\r')
         {
             buf->buffer[i] = '\0';
             replaced++;

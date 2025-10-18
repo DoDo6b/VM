@@ -5,32 +5,41 @@
 #include "../vm.h"
 
 
-Erracc_t add  (VM* vm);
-Erracc_t sub  (VM* vm);
-Erracc_t mul  (VM* vm);
-Erracc_t div  (VM* vm);
-Erracc_t cmp  (VM* vm);
+typedef struct
+{
+    opcode_t opcode;
+    void (*exec)(VM*);
+}operation_s;
 
-Erracc_t jmp  (VM* vm);
-Erracc_t jnz  (VM* vm);
-Erracc_t jz   (VM* vm);
-Erracc_t jl   (VM* vm);
-Erracc_t jle  (VM* vm);
-Erracc_t jg   (VM* vm);
-Erracc_t jge  (VM* vm);
+extern operation_s operations[NUM_OPS];
 
-Erracc_t call (VM* vm);
-Erracc_t ret  (VM* vm);
 
-Erracc_t mov  (VM* vm);
+void op_ADD  (VM* vm);
+void op_SUB  (VM* vm);
+void op_MUL  (VM* vm);
+void op_DIV  (VM* vm);
+void op_CMP  (VM* vm);
 
-Erracc_t in   (VM* vm);
+void op_JMP  (VM* vm);
+void op_JNZ  (VM* vm);
+void op_JZ   (VM* vm);
+void op_JL   (VM* vm);
+void op_JLE  (VM* vm);
+void op_JG   (VM* vm);
+void op_JGE  (VM* vm);
 
-Erracc_t push (VM* vm);
-void     out  (VM* vm);
-void     pop  (VM* vm);
+void op_CALL (VM* vm);
+void op_RET  (VM* vm);
 
-void     draw (VM* vm);
-void     dmp  (VM* vm);
+void op_MOV  (VM* vm);
+
+void op_IN   (VM* vm);
+
+void op_PUSH (VM* vm);
+void op_OUT  (VM* vm);
+void op_POP  (VM* vm);
+
+void op_DRAW (VM* vm);
+void op_DMP  (VM* vm);
 
 #endif

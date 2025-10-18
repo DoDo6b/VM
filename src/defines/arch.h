@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #define RTASM_SIGN  0X45A2833
-#define RTASM_VER   0XA000503
+#define RTASM_VER   0XA000812
 
 typedef struct
 {
@@ -25,37 +25,39 @@ typedef struct
 
 enum OP_codes
 {
-    HALT =  0X66,
+    HALT =  0X00,
 
-    IN    = 0X5E,
+    IN    = 0X01,
 
-    OUT   = 0X50,
-    POP   = 0X55,
-    PUSH  = 0X53,
+    OUT   = 0X02,
+    POP   = 0X03,
+    PUSH  = 0X04,
 
-    MOV   = 0X39,
+    MOV   = 0X05,
 
-    JMP   = 0X3F,
-    JNZ   = 0X75,
-    JZ    = 0X74,
-    JL    = 0X7C,
-    JLE   = 0X7E,
-    JGE   = 0X7D,
-    JG    = 0X7F,
+    JMP   = 0X06,
+    JNZ   = 0X07,
+    JZ    = 0X08,
+    JL    = 0X09,
+    JLE   = 0X0A,
+    JGE   = 0X0B,
+    JG    = 0X0C,
 
-    CALL  = 0X7A,
-    RET   = 0X7B,
+    CALL  = 0X0D,
+    RET   = 0X0E,
 
-    CMP  =  0X60,
+    CMP  =  0X0F,
 
-    ADD   = 0X01,
-    SUB   = 0X02,
-    MUL   = 0X03,
-    DIV   = 0X04,
+    ADD   = 0X10,
+    SUB   = 0X11,
+    MUL   = 0X12,
+    DIV   = 0X13,
 
-    DMP   = 0X6A,
-    DRAW  = 0X6E,
+    DMP   = 0X14,
+    DRAW  = 0X15,
 };
+
+#define NUM_OPS 22
 
 #define INSTRUCTIONBUF 8
 typedef char        instruction_t[INSTRUCTIONBUF];

@@ -112,6 +112,9 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         if (bufpeekc (bufR) != '\0' && bufpeekc (bufR) != ';')
         {
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
+
+            bufDump (bufR);
+
             log_srcerr
             (
                 bufR->name,

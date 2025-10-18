@@ -2,7 +2,7 @@
 
 #define MODDSTMASK (mod & 0x07)
 
-Erracc_t mov (VM* vm)
+void op_MOV (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
     vm->codeseg.rip += sizeof (opcode_t);
@@ -20,7 +20,7 @@ Erracc_t mov (VM* vm)
             {
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                 log_err ("syntax error", "trying to mov data into unknown register");
-                return ErrAcc;
+                return;
             }
             break;
 
@@ -52,7 +52,7 @@ Erracc_t mov (VM* vm)
                 {
                     ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                     log_err ("syntax error", "trying to mov data into unknown register");
-                    return ErrAcc;
+                    return;
                 }
 
                 #pragma GCC diagnostic push
@@ -70,14 +70,14 @@ Erracc_t mov (VM* vm)
             {
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                 log_err ("syntax error", "offset and disp64 combined in mov r/m mod");
-                return ErrAcc;
+                return;
             }
 
             if (MODDSTMASK >= NUM_REGS)
             {
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                 log_err ("syntax error", "trying to mov data into unknown register");
-                return ErrAcc;
+                return;
             }
 
             #pragma GCC diagnostic push
@@ -102,8 +102,8 @@ Erracc_t mov (VM* vm)
         default:
             ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
             log_err ("syntax error", "unknown mov r/m mod");
-            return ErrAcc;
+            return;
     }
 
-    return ErrAcc;
+    return;
 }

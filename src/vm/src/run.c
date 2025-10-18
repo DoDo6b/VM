@@ -19,52 +19,24 @@ static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
     {
         instrc++;
 
-        switch (*vm->codeseg.rip)
+        if (*vm->codeseg.rip == HALT) break;
+
+        if ((unsigned char)*vm->codeseg.rip > NUM_OPS)
         {
-            case OUT:  out  (vm); break;
-            case POP:  pop  (vm); break;
-
-            case CMP:  cmp  (vm); break;
-            
-            case ADD:  add  (vm); break;
-            case SUB:  sub  (vm); break;
-            case MUL:  mul  (vm); break;
-            case DIV:  div  (vm); break;
-
-            case IN:    in  (vm); break;
-
-            case PUSH:  push(vm); break;
-            case MOV:   mov (vm); break;
-            
-            case JMP:   jmp (vm); break;
-            case JNZ:   jnz (vm); break;
-            case JZ:    jz  (vm); break;
-            case JL:    jl  (vm); break;
-            case JG:    jg  (vm); break;
-            case JLE:   jle (vm); break;
-            case JGE:   jge (vm); break;
-
-            case CALL:  call(vm); break;
-            case RET:   ret (vm); break;
-
-            case DRAW:  draw(vm); break;
-            case DMP:   dmp (vm); break;
-
-            case HALT: halt = true; break;
-
-            default:
-                ErrAcc |= VM_ERRCODE (VM_OPCODENOTFOUND);
-                log_srcerr (
-                    bcname,
-                    instrc,
-                    "syntax error",
-                    "operation not found: \"%0X\"",
-                    *vm->codeseg.rip
-                );
-                VMdump (vm);
-                VMFree (vm);
-                return ErrAcc;
+            ErrAcc |= VM_ERRCODE (VM_OPCODENOTFOUND);
+            log_srcerr (
+                bcname,
+                instrc,
+                "syntax error",
+                "operation not found: \"%0X\"",
+                *vm->codeseg.rip
+            );
+            VMdump (vm);
+            VMFree (vm);
+            return ErrAcc;
         }
+
+        operations[(unsigned char)*vm->codeseg.rip].exec (vm);
         
         if (ErrAcc)
         {

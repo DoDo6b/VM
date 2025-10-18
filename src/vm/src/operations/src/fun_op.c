@@ -3,7 +3,7 @@
 
 #define SLEEPTIME 100000
 
-void draw (VM* vm)
+void op_DRAW (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -27,7 +27,7 @@ void draw (VM* vm)
     vm->codeseg.rip += sizeof (opcode_t);
 }
 
-void dmp (VM* vm)
+void op_DMP (VM* vm)
 {
     VMdump (vm);
 

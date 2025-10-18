@@ -13,7 +13,7 @@ int main (int argc, char** argv)
     if (argc < 2)
     {
         log_err ("error", "no input file, usage: %s *input file*", argv[0]);
-        exit (EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 
@@ -21,7 +21,7 @@ int main (int argc, char** argv)
     if (ErrAcc)
     {
         log_err ("runtime error", "execution has ended with code %llu", ErrAcc);
-        exit (EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 
