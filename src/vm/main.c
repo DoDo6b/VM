@@ -2,25 +2,26 @@
 #include "run.h"
 
 #define LOGFILE "log.html"
+#define STACKSIZE 2048
+#define RAMSIZE 11844
 
 
 int main (int argc, char** argv)
 {
     log_start (LOGFILE);
-    log_string ("call: %s %s\n", argv[0], argv[1]);
 
     if (argc < 2)
     {
         log_err ("error", "no input file, usage: %s *input file*", argv[0]);
-        exit (EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 
-    ErrAcc |= run (argv[1]);
+    ErrAcc |= run (argv[1], STACKSIZE, RAMSIZE);
     if (ErrAcc)
     {
         log_err ("runtime error", "execution has ended with code %llu", ErrAcc);
-        exit (EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 

@@ -1,7 +1,7 @@
 #include "../operations.h"
 
 
-Erracc_t jmp (VM* vm)
+void op_JMP (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -16,65 +16,31 @@ Erracc_t jmp (VM* vm)
     {
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
         log_err ("runtime error", "segfault");
-        return ErrAcc;
+        return;
     }
 
 
-    return ErrAcc;
+    return;
 }
 
 #define VMZF  ((vm->rflags >> 6) & 1ULL)
 #define VMCF  ( vm->rflags       & 1ULL)
 
-Erracc_t jnz (VM* vm)
-{
-    assertStrict (VMVerify (vm) == 0, "vm corrupted");
+#define COND_JMP(name, condition) \
+    void op_ ## name (VM* vm)\
+    {\
+        assertStrict (VMVerify (vm) == 0, "vm corrupted");\
+        \
+        if (condition) op_JMP (vm);\
+        else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);\
+        return;\
+    }
 
-    if (!VMZF) jmp (vm);
-    else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
-    return ErrAcc;
-}
+COND_JMP (JNZ, !VMZF)
+COND_JMP (JZ,   VMZF)
+COND_JMP (JL,  !VMZF &&  VMCF)
+COND_JMP (JG,  !VMZF && !VMCF)
+COND_JMP (JLE,  VMZF ||  VMCF)
+COND_JMP (JGE,  VMZF || !VMCF)
 
-Erracc_t jz (VM* vm)
-{
-    assertStrict (VMVerify (vm) == 0, "vm corrupted");
-    
-    if (VMZF) jmp (vm);
-    else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
-    return ErrAcc;
-}
-
-Erracc_t jl (VM* vm)
-{
-    assertStrict (VMVerify (vm) == 0, "vm corrupted");
-    
-    if (!VMZF && VMCF) jmp (vm);
-    else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
-    return ErrAcc;
-}
-
-Erracc_t jg (VM* vm)
-{
-    assertStrict (VMVerify (vm) == 0, "vm corrupted");
-    
-    if (!VMZF && !VMCF) jmp (vm);
-    else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
-    return ErrAcc;
-}
-
-Erracc_t jle (VM* vm)
-{
-    assertStrict (VMVerify (vm) == 0, "vm corrupted");
-    if (VMZF || VMCF) jmp (vm);
-    else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
-    return ErrAcc;
-}
-
-Erracc_t jge (VM* vm)
-{
-    assertStrict (VMVerify (vm) == 0, "vm corrupted");
-    
-    if (VMZF || !VMCF) jmp (vm);
-    else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);
-    return ErrAcc;
-}
+#undef COND_JMP

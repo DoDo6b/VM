@@ -1,7 +1,7 @@
 #include "../operations.h"
 
 
-Erracc_t call (VM* vm)
+void op_CALL (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -11,15 +11,15 @@ Erracc_t call (VM* vm)
     {
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
         log_err ("runtime error", "segfault");
-        return ErrAcc;
+        return;
     }
     
     stackPush (vm->callstack, &retaddr);
 
-    return jmp (vm);
+    return op_JMP (vm);
 }
 
-Erracc_t ret (VM* vm)
+void op_RET (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -30,10 +30,10 @@ Erracc_t ret (VM* vm)
     {
         ErrAcc |= VM_ERRCODE (VM_SEGFAULT);
         log_err ("runtime error", "segfault");
-        return ErrAcc;
+        return;
     }
 
     vm->codeseg.rip = retaddr;
 
-    return ErrAcc;
+    return;
 }

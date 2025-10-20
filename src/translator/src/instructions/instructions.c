@@ -11,7 +11,6 @@ Erracc_t writeOPcode (Buffer* bufW, opcode_t opcode)
         log_err ("buffer error", "cant write into buffer");
         return ErrAcc;
     }
-    log_string ("has wrote: %0X\n", opcode);
     return ErrAcc;
 }
 

@@ -2,6 +2,7 @@ translate.exe
 vm.exe
 *.rtasm
 *.rtout
+*.artout
 
 # MetaDirs
 .vscode
@@ -12,6 +13,7 @@ build
 *.htm
 *.html
 *.log
+*.txt
 
 # Prerequisites
 *.d

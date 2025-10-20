@@ -1,8 +1,9 @@
+#include <unistd.h>
 #include "../operations.h"
 
-#define WIDTH  100
+#define SLEEPTIME 100000
 
-void draw (VM* vm)
+void op_DRAW (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -14,20 +15,19 @@ void draw (VM* vm)
 
     const unsigned char* ptr = (const unsigned char*)vm->memseg.memory;
 
-    for (size_t y = 0; y < vm->memseg.size; y += WIDTH, ptr += WIDTH)
+    for (; ptr < (const unsigned char*)vm->memseg.memory + vm->memseg.size; ptr++)
     {
-        for (size_t x = 0; x < WIDTH && y + x < vm->memseg.size; x++)
-        {
-           if (*(ptr + x) != 0) printf ("%c", *(ptr + x));
-           else printf (" ");
-        }
-        printf ("\n");
+        if (*ptr != 0) printf ("%c", *ptr);
+        else printf (" ");
     }
+    printf ("\n");
+
+    usleep (SLEEPTIME);
 
     vm->codeseg.rip += sizeof (opcode_t);
 }
 
-void dmp (VM* vm)
+void op_DMP (VM* vm)
 {
     VMdump (vm);
 

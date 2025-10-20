@@ -2,7 +2,7 @@
 
 #define MODSRCMASK  ((mod >> 3) & 0x07)
 
-Erracc_t in (VM* vm)
+void op_IN (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -12,11 +12,11 @@ Erracc_t in (VM* vm)
     stackPush (vm->stack, &operand);
 
     vm->codeseg.rip += sizeof (opcode_t);
-    return ErrAcc;
+    return;
 }
 
 
-Erracc_t push (VM* vm)
+void op_PUSH (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -37,7 +37,7 @@ Erracc_t push (VM* vm)
             {
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                 log_err ("syntax error", "trying to push data from unknown register");
-                return ErrAcc;
+                return;
             }
             break;
 
@@ -68,7 +68,7 @@ Erracc_t push (VM* vm)
                 {
                     ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                     log_err ("syntax error", "trying to push data from unknown register");
-                    return ErrAcc;
+                    return;
                 }
 
                 #pragma GCC diagnostic push
@@ -87,14 +87,14 @@ Erracc_t push (VM* vm)
                 VMdump (vm);
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                 log_err ("error", "impossible r/m field in mod");
-                return ErrAcc;
+                return;
             }
 
             if (MODSRCMASK >= NUM_REGS)
             {
                 ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
                 log_err ("syntax error", "trying to push data from unknown register");
-                return ErrAcc;
+                return;
             }
 
             #pragma GCC diagnostic push
@@ -121,13 +121,13 @@ Erracc_t push (VM* vm)
             VMdump (vm);
             ErrAcc |= VM_ERRCODE (VM_BYTECODECORRUPTED);
             log_err ("error", "bytecode corrupted");
-            return ErrAcc;
+            return;
     }
 
-    return ErrAcc;
+    return;
 }
 
-void out (VM* vm)
+void op_OUT (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -139,7 +139,7 @@ void out (VM* vm)
     vm->codeseg.rip += sizeof (opcode_t);
 }
 
-void pop (VM* vm)
+void op_POP (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 

@@ -29,7 +29,7 @@ typedef struct
     char*       buffer;
     char*       bufpos;
     FILE*       stream;
-    const char* name;   // optional, non NULL isnt garanted
+    char* name;   // optional, non NULL isnt garanted
 }Buffer;
 
 Buffer* bufInit (size_t size);
@@ -43,7 +43,7 @@ FILE* bufFOpen   (Buffer* buf, const char* fname,              const char* mode)
 
 size_t bufRead  (Buffer* buf, size_t size);
 size_t bufLSplit(Buffer* buf);
-size_t bufWrite (Buffer* buf, void* src, size_t size); 
+size_t bufWrite (Buffer* buf, const void* src, size_t size); 
 size_t bufFlush (Buffer* buf);
 
 size_t bufScanf    (Buffer* buf, const char* format, void* dst);
