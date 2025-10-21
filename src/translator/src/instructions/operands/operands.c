@@ -1,7 +1,34 @@
 #include "operands.h"
 
 
-operand_t translateOperand (Buffer* bufR, size_t instrc)
+typedef struct
+{
+    hash_t hash;
+    const char* str;
+    opcode_t opcode;
+}RegDescr_s;
+
+static RegDescr_s Regs[NUM_REGS] = {};
+
+#define REG_DESCR(reg, i) \
+    Regs[i].str = #reg;\
+    Regs[i].hash = djb2Hash (#reg, sizeof (#reg));\
+    Regs[i].opcode = OPC_ ## reg;
+
+void reginit ()
+{
+    REG_DESCR (RAX, 0)
+    REG_DESCR (RCX, 1)
+    REG_DESCR (RDX, 2)
+    REG_DESCR (RBX, 3)
+    REG_DESCR (RSP, 4)
+    REG_DESCR (RBP, 5)
+    REG_DESCR (RSI, 6)
+    REG_DESCR (RDI, 7)
+}
+
+
+operand_t getImm (Buffer* bufR)
 {
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
@@ -13,7 +40,7 @@ operand_t translateOperand (Buffer* bufR, size_t instrc)
         log_srcerr
         (
             bufR->name,
-            instrc + 1,
+            bufTellL (bufR),
             "syntax error",
             "no operand found"
         );
@@ -23,42 +50,27 @@ operand_t translateOperand (Buffer* bufR, size_t instrc)
 }
 
 
-#define CASE_REG(reg)  case reg ## _HASH: return reg;
-
-static opcode_t decomposeReg (const char* str, const char* bufName, size_t instrc)
+static opcode_t regSearch (const char* str)
 {
     assertStrict (str, "received NULL");
 
     hash_t hash = djb2Hash (str, sizeof (instruction_t));
-    switch (hash)
+    for (size_t i = 0; i < NUM_REGS; i++)
     {
-        CASE_REG (RAX)
-        CASE_REG (RCX)
-        CASE_REG (RDX)
-        CASE_REG (RBX)
-        CASE_REG (RSP)
-        CASE_REG (RBP)
-        CASE_REG (RSI)
-        CASE_REG (RDI)
-
-        default:
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-            log_srcerr
-            (
-                bufName,
-                instrc + 1,
-                "syntax error",
-                "unknown register (reg: %s, hash: %lu)",
-                str,
-                hash
-            );
-            return UINT8_MAX;
+        if (Regs[i].hash == hash) return Regs[i].opcode;
     }
+    ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
+    log_err
+    (
+        "syntax error",
+        "unknown register (reg: %s, hash: %lu)",
+        str,
+        hash
+    );
+    return UINT8_MAX;
 }
 
-#undef CASE_REG
-
-opcode_t translateReg (Buffer* bufR, size_t instrc)
+opcode_t getReg (Buffer* bufR)
 {
     assertStrict (bufVerify (bufR, 0) == 0, "buffer failed verification");
 
@@ -70,13 +82,13 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
         log_srcerr
         (
             bufR->name,
-            instrc + 1,
+            bufTellL (bufR),
             "syntax error",
             "no operand found"
         );
     }
 
-    opcode_t reg = decomposeReg (str, bufR->name, instrc);
+    opcode_t reg = regSearch (str);
 
     if (reg == UINT8_MAX)
     {
@@ -84,7 +96,7 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
         log_srcerr
         (
             bufR->name,
-            instrc + 1,
+            bufTellL (bufR),
             "syntax error",
             "no operand found"
         );
@@ -94,7 +106,7 @@ opcode_t translateReg (Buffer* bufR, size_t instrc)
 }
 
 
-Erracc_t decomposeMemcall (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t instrc)
+Erracc_t tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (reg,    "received NULL");
@@ -111,7 +123,7 @@ Erracc_t decomposeMemcall (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t
         log_srcerr
         (
             bufR->name,
-            instrc + 1,
+            bufTellL (bufR),
             "syntax error",
             "no operand found: %s",
             str
@@ -128,25 +140,28 @@ Erracc_t decomposeMemcall (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t
 
         if (isdigit (str[i]))
         {
-            char* nexttoken = NULL;
-            *offset = strtoll (&str[i], &nexttoken, 10);
-            i = (size_t)(nexttoken - str - 1);
+            int skipped = 0;
+            sscanf (&str[i], "%lld%n", offset, &skipped);
+
+            i += (size_t)skipped - 1;
         }
 
         if (str[i] == '+' || str[i] == '-') sign = str[i];
 
         if (isalpha (str[i]))
         {
-            int nexttokenoff = 0;
-            sscanf (&str[i], "%s%n", regstr, &nexttokenoff);
-            i += (size_t)nexttokenoff - 1;
+            int skipped = 0;
+
+            sscanf (&str[i], "%s%n", regstr, &skipped);
+            
+            i += (size_t)skipped - 1;
         }
     }
 
     *offset *= sign == '-' ? -1 : 1;
-    if (strlen (regstr))
+    if (*regstr)
     {
-        *reg = decomposeReg (regstr, bufR->name, instrc);
+        *reg = regSearch (regstr);
         if (*reg == DISP64)
         {
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);

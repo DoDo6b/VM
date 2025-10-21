@@ -1,10 +1,10 @@
 #include "operations.h"
 
 
-#define OP_DESCR(op)  \
-    [op] = { \
-        .opcode = op, \
-        .exec   = op_ ## op\
+#define OP_DESCR(opc)  \
+    [OPC_ ## opc] = { \
+        .opcode = OPC_ ## opc, \
+        .exec   = op ## opc\
     },
 
 operation_s operations[NUM_OPS] = {

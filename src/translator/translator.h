@@ -16,6 +16,7 @@
 
 #define BUFFERSIZE BUFSIZ
 
+void instrinit ();
 
 Erracc_t translate (const char* input, const char* output);
 

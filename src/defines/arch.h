@@ -20,41 +20,40 @@ typedef struct
 #define VALUEFORMAT    "%lld"
 #define REGISTERPREFIX '%'
 #define REGISTERFORMAT "%s"
-#define RAPREFIX       "[]"
 
 
 enum OP_codes
 {
-    HALT =  0X00,
+    OPC_HALT =  0X00,
 
-    IN    = 0X01,
+    OPC_IN    = 0X01,
 
-    OUT   = 0X02,
-    POP   = 0X03,
-    PUSH  = 0X04,
+    OPC_OUT   = 0X02,
+    OPC_POP   = 0X03,
+    OPC_PUSH  = 0X04,
 
-    MOV   = 0X05,
+    OPC_MOV   = 0X05,
 
-    JMP   = 0X06,
-    JNZ   = 0X07,
-    JZ    = 0X08,
-    JL    = 0X09,
-    JLE   = 0X0A,
-    JGE   = 0X0B,
-    JG    = 0X0C,
+    OPC_JMP   = 0X06,
+    OPC_JNZ   = 0X07,
+    OPC_JZ    = 0X08,
+    OPC_JL    = 0X09,
+    OPC_JLE   = 0X0A,
+    OPC_JGE   = 0X0B,
+    OPC_JG    = 0X0C,
 
-    CALL  = 0X0D,
-    RET   = 0X0E,
+    OPC_CALL  = 0X0D,
+    OPC_RET   = 0X0E,
 
-    CMP  =  0X0F,
+    OPC_CMP  =  0X0F,
 
-    ADD   = 0X10,
-    SUB   = 0X11,
-    MUL   = 0X12,
-    DIV   = 0X13,
+    OPC_ADD   = 0X10,
+    OPC_SUB   = 0X11,
+    OPC_MUL   = 0X12,
+    OPC_DIV   = 0X13,
 
-    DMP   = 0X14,
-    DRAW  = 0X15,
+    OPC_DMP   = 0X14,
+    OPC_DRAW  = 0X15,
 };
 
 #define NUM_OPS 22
@@ -66,18 +65,17 @@ typedef uint8_t     opcode_t;
 
 enum Registers
 {
-    RAX,
-    RCX,
-    RDX,
-    RBX,
-    RSP,
-    RBP,
-    RSI,
-    RDI,
+    OPC_RAX,
+    OPC_RCX,
+    OPC_RDX,
+    OPC_RBX,
+    OPC_RSP,
+    OPC_RBP,
+    OPC_RSI,
+    OPC_RDI,
 };
 
 #define NUM_REGS 8
-#define OPCODESHIFT (sizeof (opcode_t) - 1) * 8
 
 typedef int64_t     operand_t;
 typedef int64_t     offset_t;

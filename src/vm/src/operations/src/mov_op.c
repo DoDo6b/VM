@@ -2,7 +2,7 @@
 
 #define MODDSTMASK (mod & 0x07)
 
-void op_MOV (VM* vm)
+void opMOV (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
     vm->codeseg.rip += sizeof (opcode_t);

@@ -20,23 +20,21 @@ typedef struct __attribute__((packed))
 #define JMPPOINTNAME_SIZ 16
 #define JMPTABLE_SIZ 256
 
-typedef enum
-{
-    JMP_NOCOND = 0,
-    JMP_LESS   = 1,
-    JMP_LEQ    = 2,
-    JMP_NZERO  = 3,
-    JMP_ZERO   = 4,
-    JMP_GEQ    = 5,
-    JMP_GRTR   = 6,
-    JMP_CALL   = 7,
-}JMPCOND;
 
-Erracc_t decomposeChpoint (const char* str, Buffer* bufW);
-Erracc_t decomposeJMP     (Buffer* bufR,    Buffer* bufW, size_t instrC, JMPCOND condition);
+Erracc_t labelDecl  (const char* str, Buffer* bufW);
+
+void handleJMP  (Buffer* bufR, Buffer* bufW);
+void handleJNZ  (Buffer* bufR, Buffer* bufW);
+void handleJZ   (Buffer* bufR, Buffer* bufW);
+void handleJL   (Buffer* bufR, Buffer* bufW);
+void handleJLE  (Buffer* bufR, Buffer* bufW);
+void handleJG   (Buffer* bufR, Buffer* bufW);
+void handleJGE  (Buffer* bufR, Buffer* bufW);
+void handleCALL (Buffer* bufR, Buffer* bufW);
+
 
 Erracc_t jmpWLdump ();
-size_t remainingUnprocJMPReq ();
+size_t remUnmngldJMP ();
 
 
 #endif

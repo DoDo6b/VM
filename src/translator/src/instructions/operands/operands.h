@@ -10,22 +10,10 @@
 #include "../../../../defines/arch.h"
 #include "../../translatorcodes.h"
 
+void reginit ();
 
-enum RegisterHash   // these hashes could be calculated with gethash.exe from kutils
-{
-    RAX_HASH = 193504464,
-    RCX_HASH = 193504530,
-    RDX_HASH = 193504563,
-    RBX_HASH = 193504497,
-    RSP_HASH = 193505050,
-    RBP_HASH = 193504489,
-    RSI_HASH = 193505043,
-    RDI_HASH = 193504548,
-};
-
-
-operand_t translateOperand (Buffer* bufR,                                  size_t instrc);
-opcode_t translateReg      (Buffer* bufR,                                  size_t instrc);
-Erracc_t decomposeMemcall  (Buffer* bufR, opcode_t* reg, offset_t* offset, size_t instrc);
+operand_t getImm      (Buffer* bufR);
+opcode_t  getReg      (Buffer* bufR);
+Erracc_t  tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset);
 
 #endif

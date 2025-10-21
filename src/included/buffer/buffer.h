@@ -52,7 +52,8 @@ char   bufGetc     (Buffer* buf);
 char   bufpeekc    (Buffer* buf);
 
 long long bufSeek (Buffer* buf, long offset, char base);
-long      bufTell (Buffer* buf);
+long      bufTell  (const Buffer* buf);
+long      bufTellL (const Buffer* buf);
 void bufCpy (Buffer* buf, void* dst, size_t size);
 
 void bufSSpaces (Buffer* buf);

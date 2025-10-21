@@ -3,41 +3,41 @@
 
 typedef struct
 {
-    unsigned long hash;
-    pointer_t absptr;
-}JMPtag;
+    hash_t hash;
+    pointer_t ptr;
+}Label;
 
 typedef struct
 {
-    unsigned long hash;
+    hash_t labelhash;
     opcode_t opcode;
-    pointer_t absBackJMPptr;
-}JMPrequest;
+    pointer_t ptr;
+}Request;
 
 static struct
 {
-    size_t jmpTagTotal;
-    size_t jmpRequestsTotal;
-    JMPtag    jmptable   [JMPTABLE_SIZ];
-    JMPrequest jmprequests[JMPTABLE_SIZ];
-}JMPWaitingList = {
-    .jmpTagTotal      =  0,
-    .jmpRequestsTotal =  0,
-    .jmptable         = {},
-    .jmprequests      = {},
+    size_t labelsTotal;
+    size_t reqTotal;
+    Label   labels  [JMPTABLE_SIZ];
+    Request requests[JMPTABLE_SIZ];
+}Unmangled = {
+    .labelsTotal =  0,
+    .reqTotal    =  0,
+    .labels      = {},
+    .requests    = {},
 };
 
 Erracc_t jmpWLdump ()
 {
     log_string ("<blu><b>jmp waiting list dump:</b><dft>\n");
 
-    log_string ("<blu>jmp tag list dump(%llu in total):<dft>\n{\n", JMPWaitingList.jmpTagTotal);
-    for (size_t i = 0; i < JMPWaitingList.jmpTagTotal; i++) log_string ("  %lu: <cyn>0x%p<dft>\n", JMPWaitingList.jmptable[i].hash, JMPWaitingList.jmptable[i].absptr);
+    log_string ("<blu>jmp tag list dump(%llu in total):<dft>\n{\n", Unmangled.labelsTotal);
+    for (size_t i = 0; i < Unmangled.labelsTotal; i++) log_string ("  %lu: <cyn>0x%p<dft>\n", Unmangled.labels[i].hash, Unmangled.labels[i].ptr);
     log_string ("}\n");
 
-    log_string ("<blu>jmp requests list dump(%llu in total):<dft>\n{\n", JMPWaitingList.jmpRequestsTotal);
-    for (size_t i = 0; i < JMPTABLE_SIZ; i++) if (JMPWaitingList.jmprequests[i].opcode != 0) 
-        log_string ("  %lu: <grn>%0X<dft> <cyn>0x%p<dft>\n", JMPWaitingList.jmprequests[i].hash, JMPWaitingList.jmprequests[i].opcode, JMPWaitingList.jmptable[i].absptr);
+    log_string ("<blu>jmp requests list dump(%llu in total):<dft>\n{\n", Unmangled.reqTotal);
+    for (size_t i = 0; i < JMPTABLE_SIZ; i++) if (Unmangled.requests[i].opcode != 0) 
+        log_string ("  %lu: <grn>%0X<dft> <cyn>0x%p<dft>\n", Unmangled.requests[i].labelhash, Unmangled.requests[i].opcode, Unmangled.labels[i].ptr);
     
     log_string ("}\n");
 
@@ -45,7 +45,7 @@ Erracc_t jmpWLdump ()
 }
 
 
-Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
+Erracc_t labelDecl (const char* str, Buffer* bufW)
 {
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     assertStrict (str, "received NULL");
@@ -65,15 +65,15 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
 
     for (size_t i = 0; i < JMPTABLE_SIZ; i++)
     {
-        if (JMPWaitingList.jmprequests[i].hash == hash)
+        if (Unmangled.requests[i].labelhash == hash)
         {
             char* const bufWpos = bufW->bufpos;
-            bufW->bufpos  = JMPWaitingList.jmprequests[i].absBackJMPptr + bufW->buffer;
+            bufW->bufpos  = Unmangled.requests[i].ptr + bufW->buffer;
 
             JMPopcode opcode =
             {
-                .opcode =                     JMPWaitingList.jmprequests[i].opcode,
-                .offset = (offset_t)(absPtr - JMPWaitingList.jmprequests[i].absBackJMPptr - 1),
+                .opcode =                     Unmangled.requests[i].opcode,
+                .offset = (offset_t)(absPtr - Unmangled.requests[i].ptr - 1),
             };
 
             if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
@@ -96,18 +96,18 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
 
             bufW->bufpos = bufWpos;
 
-            JMPWaitingList.jmprequests[i].hash          = 0;
-            JMPWaitingList.jmprequests[i].opcode        = 0;
-            JMPWaitingList.jmprequests[i].absBackJMPptr = 0;
-            JMPWaitingList.jmpRequestsTotal--;
+            Unmangled.requests[i].labelhash          = 0;
+            Unmangled.requests[i].opcode        = 0;
+            Unmangled.requests[i].ptr = 0;
+            Unmangled.reqTotal--;
         }
     }
 
-    JMPWaitingList.jmptable[JMPWaitingList.jmpTagTotal].hash    = hash;
-    JMPWaitingList.jmptable[JMPWaitingList.jmpTagTotal].absptr  = absPtr;
-    JMPWaitingList.jmpTagTotal++;
+    Unmangled.labels[Unmangled.labelsTotal].hash    = hash;
+    Unmangled.labels[Unmangled.labelsTotal].ptr  = absPtr;
+    Unmangled.labelsTotal++;
 
-    if (JMPWaitingList.jmpTagTotal >= JMPTABLE_SIZ)
+    if (Unmangled.labelsTotal >= JMPTABLE_SIZ)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFOVERFLOW);
         log_err ("buffer overflow", "cant write jmptag into buffer");
@@ -116,33 +116,13 @@ Erracc_t decomposeChpoint (const char* str, Buffer* bufW)
     return ErrAcc;
 }
 
-Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condition)
+Erracc_t JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
 
-    opcode_t jmpopcode = 0;
-
-    switch (condition)
-    {
-        case JMP_NOCOND: jmpopcode = JMP;  break;
-        case JMP_LESS:   jmpopcode = JL;   break;
-        case JMP_LEQ:    jmpopcode = JLE;  break;
-        case JMP_NZERO:  jmpopcode = JNZ;  break;
-        case JMP_ZERO:   jmpopcode = JZ;   break;
-        case JMP_GEQ:    jmpopcode = JGE;  break;
-        case JMP_GRTR:   jmpopcode = JG;   break;
-
-        case JMP_CALL:   jmpopcode = CALL; break;
-        
-        default:
-            ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
-            log_err ("internal error", "unknown type of JMP");
-            return ErrAcc;
-    }
-
-    JMPopcode opcode = {
-        .opcode   = jmpopcode,
+    JMPopcode jmpopcode = {
+        .opcode   = opcode,
         .offset = 0,
     };
 
@@ -155,7 +135,7 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
         log_srcerr
         (
             bufR->name,
-            instrC + 1,
+            bufTellL (bufR),
             "syntax error",
             "no jmp tag found"
         );
@@ -163,12 +143,12 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
     }
 
     hash_t hash = djb2Hash (jmptag, sizeof (jmptag));
-    for (size_t i = 0; i < JMPWaitingList.jmpTagTotal; i++)
+    for (size_t i = 0; i < Unmangled.labelsTotal; i++)
     {
-        if (JMPWaitingList.jmptable[i].hash == hash)
+        if (Unmangled.labels[i].hash == hash)
         {
-            opcode.offset = (offset_t)(JMPWaitingList.jmptable[i].absptr - (pointer_t)(bufW->bufpos - bufW->buffer) - 1);
-            if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
+            jmpopcode.offset = (offset_t)(Unmangled.labels[i].ptr - (pointer_t)(bufW->bufpos - bufW->buffer) - 1);
+            if (bufWrite (bufW, &jmpopcode, sizeof (JMPopcode)) == 0)
             {
                 ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
                 log_err ("buffer error", "cant write into buffer");
@@ -181,8 +161,8 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
                 "  opcode: %0X\n"
                 "  offset: %lld\n"
                 "  }\n",
-                opcode.opcode,
-                opcode.offset
+                jmpopcode.opcode,
+                jmpopcode.offset
             );
             
             return ErrAcc;
@@ -192,12 +172,12 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
     bool overflow = true;
     for (size_t i = 0; i < JMPTABLE_SIZ; i++)
     {
-        if (JMPWaitingList.jmprequests[i].hash == 0 && JMPWaitingList.jmprequests[i].absBackJMPptr == 0 && JMPWaitingList.jmprequests[i].opcode == 0)
+        if (Unmangled.requests[i].labelhash == 0 && Unmangled.requests[i].ptr == 0 && Unmangled.requests[i].opcode == 0)
         {
-            JMPWaitingList.jmprequests[i].hash   = hash;
-            JMPWaitingList.jmprequests[i].opcode = jmpopcode;
-            JMPWaitingList.jmprequests[i].absBackJMPptr = (pointer_t)(bufW->bufpos - bufW->buffer);
-            JMPWaitingList.jmpRequestsTotal++;
+            Unmangled.requests[i].labelhash   = hash;
+            Unmangled.requests[i].opcode = opcode;
+            Unmangled.requests[i].ptr = (pointer_t)(bufW->bufpos - bufW->buffer);
+            Unmangled.reqTotal++;
             overflow = false;
             break;
         }
@@ -219,12 +199,31 @@ Erracc_t decomposeJMP (Buffer* bufR, Buffer* bufW, size_t instrC, JMPCOND condit
     return ErrAcc;
 }
 
-size_t remainingUnprocJMPReq ()
+#define JMPPATTERN(opcode) \
+void handle ## opcode (Buffer* bufR, Buffer* bufW)\
+{\
+    JMPLikeMangle (bufR, bufW, OPC_ ## opcode);\
+}
+
+JMPPATTERN (JMP)
+JMPPATTERN (JNZ)
+JMPPATTERN (JZ)
+JMPPATTERN (JL)
+JMPPATTERN (JLE)
+JMPPATTERN (JG)
+JMPPATTERN (JGE)
+JMPPATTERN (CALL)
+
+
+#undef JMPPATTERN
+
+
+size_t remUnmngldJMP ()
 {
     size_t requests = 0;
     for (size_t i = 0; i < JMPTABLE_SIZ; i++) 
     {
-        if (JMPWaitingList.jmprequests[i].hash != 0 || JMPWaitingList.jmprequests[i].opcode) requests++;
+        if (Unmangled.requests[i].labelhash != 0 || Unmangled.requests[i].opcode) requests++;
     }
     return requests;
 }

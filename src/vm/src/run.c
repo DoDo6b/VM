@@ -19,7 +19,7 @@ static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
     {
         instrc++;
 
-        if (*vm->codeseg.rip == HALT) break;
+        if (*vm->codeseg.rip == OPC_HALT) break;
 
         if ((unsigned char)*vm->codeseg.rip > NUM_OPS)
         {

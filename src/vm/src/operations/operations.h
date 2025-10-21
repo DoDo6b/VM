@@ -14,32 +14,32 @@ typedef struct
 extern operation_s operations[NUM_OPS];
 
 
-void op_ADD  (VM* vm);
-void op_SUB  (VM* vm);
-void op_MUL  (VM* vm);
-void op_DIV  (VM* vm);
-void op_CMP  (VM* vm);
+void opADD  (VM* vm);
+void opSUB  (VM* vm);
+void opMUL  (VM* vm);
+void opDIV  (VM* vm);
+void opCMP  (VM* vm);
 
-void op_JMP  (VM* vm);
-void op_JNZ  (VM* vm);
-void op_JZ   (VM* vm);
-void op_JL   (VM* vm);
-void op_JLE  (VM* vm);
-void op_JG   (VM* vm);
-void op_JGE  (VM* vm);
+void opJMP  (VM* vm);
+void opJNZ  (VM* vm);
+void opJZ   (VM* vm);
+void opJL   (VM* vm);
+void opJLE  (VM* vm);
+void opJG   (VM* vm);
+void opJGE  (VM* vm);
 
-void op_CALL (VM* vm);
-void op_RET  (VM* vm);
+void opCALL (VM* vm);
+void opRET  (VM* vm);
 
-void op_MOV  (VM* vm);
+void opMOV  (VM* vm);
 
-void op_IN   (VM* vm);
+void opIN   (VM* vm);
 
-void op_PUSH (VM* vm);
-void op_OUT  (VM* vm);
-void op_POP  (VM* vm);
+void opPUSH (VM* vm);
+void opOUT  (VM* vm);
+void opPOP  (VM* vm);
 
-void op_DRAW (VM* vm);
-void op_DMP  (VM* vm);
+void opDRAW (VM* vm);
+void opDMP  (VM* vm);
 
 #endif

@@ -360,9 +360,22 @@ long long bufSeek (Buffer* buf, long offset, char base)
     return buf->bufpos - buf->buffer;
 }
 
-long bufTell (Buffer* buf)
+long bufTell (const Buffer* buf)
 {
+    assertStrict (bufVerify (buf, 0) == 0, "buffer failed verification");
+
     return (long)(buf->bufpos - buf->buffer);
+}
+
+long bufTellL (const Buffer* buf)
+{
+    assertStrict (bufVerify (buf, 0) == 0, "buffer failed verification");
+
+    long line = 0;
+    const char* ptr = buf->buffer;
+    while ((ptr = strchr (ptr, '\0')) < buf->bufpos) line++;
+
+    return line;
 }
 
 void bufCpy (Buffer* buf, void* dst, size_t size)
