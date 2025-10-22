@@ -29,6 +29,16 @@ typedef struct
 }Instruction_s;
 static Instruction_s Instructions[NUM_OPS] = {};
 
+static int instrHashCmp (const void* a, const void* b)
+{
+    const Instruction_s* instrA = (const Instruction_s*)a;
+    const Instruction_s* instrB = (const Instruction_s*)b;
+
+    if (instrA->hash < instrB->hash) return -1;
+    if (instrA->hash > instrB->hash) return 1;
+    return 0;
+}
+
 #define INSTR_DESCR(instr, argc, i)\
     Instructions[i].str = #instr;\
     Instructions[i].hash = djb2Hash (#instr, sizeof (#instr));\
@@ -64,6 +74,7 @@ void instrinit ()
     INSTR_DESCR (JGE,  1, 20)
     INSTR_DESCR (CALL, 1, 21)
 
+    qsort (Instructions, NUM_OPS, sizeof (Instruction_s), instrHashCmp);
 }
 
 
@@ -79,39 +90,43 @@ static bool sSpaceLines (Buffer* buf)
 }
 
 
-static Erracc_t decomposeSpecial (const char* instr, Buffer* bufR, Buffer* bufW, size_t instrc)
+static void parseSpecial (const char* instr, Buffer* bufR, Buffer* bufW)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     assertStrict (instr, "received NULL");
 
-    instruction_t nothing = {0};
+    instruction_t nothing = {};
     char key = 0;
-    if (sscanf (instr, "%[^:]%c", nothing, &key) && key == ':') return labelDecl (instr, bufW);
+    if (sscanf (instr, "%[^:]%c", nothing, &key) && key == ':') 
+    {
+        labelDecl (instr, bufW);
+        return;
+    }
 
     ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
     log_srcerr
     (
         bufR->name ? bufR->name : "*fname*",
-        instrc + 1,
+        bufTellL (bufR) + 1,
         "syntax error",
         "unknown instruction (instr: %s hash: %lu)",
         instr,
         djb2Hash (instr, sizeof (instruction_t))
     );
-    return ErrAcc;
 }
 
 
 
-static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
+static size_t parse (Buffer* bufR, Buffer* bufW)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
-    assertStrict (instrc, "received NULL");
     
     instrinit ();
+    size_t instrc = 0;
     instruction_t instruction = {0};
+
 
     while (sSpaceLines (bufR) && bufScanf (bufR, "%s", instruction) > 0)
     {
@@ -122,32 +137,30 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         }
 
         hash_t hash = djb2Hash (instruction, sizeof (instruction));
+        Instruction_s key = {
+            .hash = hash,
+            .str = NULL,
+            .opcode = UINT8_MAX,
+            .argReq = 0,
+            .handler = NULL,
+        };
 
-        for (size_t i = 0; i <= NUM_OPS; i++)
-        {
-            if (i == NUM_OPS) decomposeSpecial (instruction, bufR, bufW, *instrc);
 
-            if (hash == Instructions[i].hash)
-            {
-                Instructions[i].handler (bufR, bufW);
-                break;
-            }
-        }
+        const Instruction_s* instructionDescr = (const Instruction_s*)bsearch (&key, Instructions, NUM_OPS, sizeof (Instruction_s), instrHashCmp);
+        if (instructionDescr) instructionDescr->handler (bufR, bufW);
+        else parseSpecial (instruction, bufR, bufW);
 
-        *instrc += 1;
 
+        instrc++;
 
         bufSSpaces (bufR);
         if (bufpeekc (bufR) != '\0' && bufpeekc (bufR) != ';')
         {
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-
-            bufDump (bufR);
-
             log_srcerr
             (
                 bufR->name,
-                *instrc + 1,
+                bufTellL (bufR) + 1,
                 "syntax error",
                 "multiple instructions in line"
             );
@@ -155,24 +168,28 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         
         if (ErrAcc)
         {
-            log_err ("runtime error", "aborting");
-            return ErrAcc;
+            log_srcerr
+            (
+                bufR->name,
+                bufTellL (bufR) + 1,
+                "runtime error",
+                "aborting"
+            );
+            return 0;
         }
     }
+
 
     if (remUnmngldJMP () != 0)
     {
         jmpWLdump ();
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-        log_err ("syntax error", "missing jmptags");
-        return ErrAcc;
+        log_err ("syntax error", "there are still unrelated jmp");
+        return 0;
     }
 
-
-    return ErrAcc;
+    return instrc;
 }
-
-#undef CASE_SIMPLEINSTRUCTION
 
 
 
@@ -204,28 +221,29 @@ Erracc_t translate (const char* input, const char* output)
     bufSetStream (bufW, output, bin,     BUFWRITE);
 
     bufRead (bufR, 0);
-    bufLSplit (bufR);
+    fclose (listing);
 
+    bufLSplit (bufR);
     fseek (bin, sizeof (Header), SEEK_SET);
 
     Header header = {
         .sign =    RTASM_SIGN,
         .version = RTASM_VER,
-        .instrc = 0,
+        .instrc =  0,
     };
 
 
-    decompose (bufR, bufW, &header.instrc);
+    header.instrc = parse (bufR, bufW);
 
 
     log_string ("<grn>translated %llu opcode(s)<dft>\n", header.instrc);
 
     bufFree (bufW);
     bufFree (bufR);
+
     fseek  (bin, 0, SEEK_SET);
     fwrite (&header, sizeof (Header), 1, bin);
-    
-    fclose (listing);
+
     fclose (bin);
 
     return ErrAcc;

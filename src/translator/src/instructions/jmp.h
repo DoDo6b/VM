@@ -10,18 +10,7 @@
 #include "operands/operands.h"
 
 
-typedef struct __attribute__((packed))
-{
-    opcode_t opcode;
-    offset_t offset;
-}JMPopcode;
-
-
-#define JMPPOINTNAME_SIZ 16
-#define JMPTABLE_SIZ 256
-
-
-Erracc_t labelDecl  (const char* str, Buffer* bufW);
+void labelDecl  (const char* str, Buffer* bufW);
 
 void handleJMP  (Buffer* bufR, Buffer* bufW);
 void handleJNZ  (Buffer* bufR, Buffer* bufW);
@@ -33,7 +22,7 @@ void handleJGE  (Buffer* bufR, Buffer* bufW);
 void handleCALL (Buffer* bufR, Buffer* bufW);
 
 
-Erracc_t jmpWLdump ();
+void jmpWLdump ();
 size_t remUnmngldJMP ();
 
 

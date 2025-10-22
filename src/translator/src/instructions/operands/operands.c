@@ -10,6 +10,16 @@ typedef struct
 
 static RegDescr_s Regs[NUM_REGS] = {};
 
+static int regHashCmp (const void* a, const void* b)
+{
+    const RegDescr_s* regA = (const RegDescr_s*)a;
+    const RegDescr_s* regB = (const RegDescr_s*)b;
+
+    if (regA->hash < regB->hash) return -1;
+    if (regA->hash > regB->hash) return 1;
+    return 0;
+}
+
 #define REG_DESCR(reg, i) \
     Regs[i].str = #reg;\
     Regs[i].hash = djb2Hash (#reg, sizeof (#reg));\
@@ -25,6 +35,8 @@ void reginit ()
     REG_DESCR (RBP, 5)
     REG_DESCR (RSI, 6)
     REG_DESCR (RDI, 7)
+
+    qsort (Regs, NUM_REGS, sizeof (RegDescr_s), regHashCmp);
 }
 
 
@@ -40,7 +52,7 @@ operand_t getImm (Buffer* bufR)
         log_srcerr
         (
             bufR->name,
-            bufTellL (bufR),
+            bufTellL (bufR) + 1,
             "syntax error",
             "no operand found"
         );
@@ -55,10 +67,15 @@ static opcode_t regSearch (const char* str)
     assertStrict (str, "received NULL");
 
     hash_t hash = djb2Hash (str, sizeof (instruction_t));
-    for (size_t i = 0; i < NUM_REGS; i++)
-    {
-        if (Regs[i].hash == hash) return Regs[i].opcode;
-    }
+    RegDescr_s key = {
+        .hash = hash,
+        .opcode = UINT8_MAX,
+        .str = NULL,
+    };
+
+    const RegDescr_s* regDescr = (const RegDescr_s*)bsearch (&key, Regs, NUM_REGS, sizeof (RegDescr_s), regHashCmp);
+    if (regDescr) return regDescr->opcode;
+
     ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
     log_err
     (
@@ -82,7 +99,7 @@ opcode_t getReg (Buffer* bufR)
         log_srcerr
         (
             bufR->name,
-            bufTellL (bufR),
+            bufTellL (bufR) + 1,
             "syntax error",
             "no operand found"
         );
@@ -96,7 +113,7 @@ opcode_t getReg (Buffer* bufR)
         log_srcerr
         (
             bufR->name,
-            bufTellL (bufR),
+            bufTellL (bufR) + 1,
             "syntax error",
             "no operand found"
         );
@@ -106,7 +123,7 @@ opcode_t getReg (Buffer* bufR)
 }
 
 
-Erracc_t tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset)
+void tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (reg,    "received NULL");
@@ -123,12 +140,12 @@ Erracc_t tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset)
         log_srcerr
         (
             bufR->name,
-            bufTellL (bufR),
+            bufTellL (bufR) + 1,
             "syntax error",
             "no operand found: %s",
             str
         );
-        return ErrAcc;
+        return;
     }
 
     char          sign   =  0;
@@ -167,10 +184,108 @@ Erracc_t tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset)
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
             log_err ("syntax error", "you cant use RBP with offset");
             *reg = UINT8_MAX;
-            return ErrAcc;
+            return;
         }
     }
     else *reg = DISP64;
+    
+}
 
-    return ErrAcc;
+
+void encodeBrackets (Buffer* bufR, Buffer* bufW, bool modshift)
+{
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
+
+    opcode_t mod = 0;
+    unsigned char shift = modshift ? 3 : 0;
+
+    bufSSpaces (bufR);
+
+    if (bufpeekc (bufR) != '[')
+    {
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_UNKERR);
+        log_err ("unknown error", "something went wrong");
+        return;
+    }
+
+    offset_t offset = INT64_MIN;
+    opcode_t reg    = UINT8_MAX;
+    tokBrackets (bufR, &reg, &offset);
+
+    if (ErrAcc) return;
+
+    if (reg == UINT8_MAX)
+    {
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_UNKERR);
+        log_err ("unknown error", "something went wrong");
+        return;
+    }
+
+    if (reg != DISP64 && offset != INT64_MIN)
+    {
+        mod = (OFF << 6) | (opcode_t)((reg & 0x07) << shift);
+        bufWrite (bufW, &mod, sizeof (mod));
+
+        bufWrite (bufW, &offset, sizeof (offset_t));
+    }
+    else
+    {
+        mod = (MEM << 6) | (opcode_t)((reg & 0x07) << shift);
+        bufWrite (bufW, &mod, sizeof (mod));
+
+        if (offset != INT64_MIN && reg == DISP64)
+        {
+            bufWrite (bufW, &offset, sizeof (offset_t));
+        }
+    }
+}
+
+void encodeReg (Buffer* bufR, Buffer* bufW, bool modshift)
+{
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
+
+    opcode_t mod = 0;
+    unsigned char shift = modshift ? 3 : 0;
+
+    bufSSpaces (bufR);
+
+    if (!isalpha ((unsigned char)bufpeekc (bufR)))
+    {
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_UNKERR);
+        log_err ("unknown error", "something went wrong");
+        return;
+    }
+
+    mod = REG << 6;
+    mod += (opcode_t)(getReg (bufR) << shift);
+                        if (ErrAcc) return;
+
+    bufWrite (bufW, &mod, sizeof (mod));
+}
+
+void encodeImm (Buffer* bufR, Buffer* bufW)
+{
+    assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
+    assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
+
+    opcode_t mod = 0;
+
+    bufSSpaces (bufR);
+
+    if (!isdigit ((unsigned char)bufpeekc (bufR)))
+    {
+        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_UNKERR);
+        log_err ("unknown error", "something went wrong");
+        return;
+    }
+
+    mod = IMM << 6;
+    bufWrite (bufW, &mod, sizeof (mod));
+
+    operand_t operand = getImm (bufR);
+    if (ErrAcc) return;
+
+    bufWrite (bufW, &operand, sizeof (operand));
 }

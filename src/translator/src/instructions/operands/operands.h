@@ -14,6 +14,11 @@ void reginit ();
 
 operand_t getImm      (Buffer* bufR);
 opcode_t  getReg      (Buffer* bufR);
-Erracc_t  tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset);
+void      tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset);
+
+void encodeBrackets (Buffer* bufR, Buffer* bufW, bool modshift);
+void encodeReg      (Buffer* bufR, Buffer* bufW, bool modshift);
+void encodeImm      (Buffer* bufR, Buffer* bufW);
+
 
 #endif

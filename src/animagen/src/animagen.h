@@ -6,10 +6,10 @@
 #include "../../included/kassert/kassert.h"
 #include "../../included/buffer/buffer.h"
 
-#define PUSH "push "
-#define MOV  "mov "
-#define DRAW "draw\n"
-#define HALT "halt\n"
+#define PUSH "PUSH "
+#define MOV  "MOV "
+#define DRAW "DRAW\n"
+#define HALT "HALT\n"
 
 size_t animationGen (const char* gif);
 

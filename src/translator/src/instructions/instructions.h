@@ -11,7 +11,6 @@
 #include "../../../defines/arch.h"
 #include "../translatorcodes.h"
 #include "operands/operands.h"
-#include "jmp.h"
 
 
 void handlePUSH (Buffer* bufR, Buffer* bufW);
@@ -29,6 +28,21 @@ void handleDIV  (Buffer* FICTIVE, Buffer* bufW);
 void handleDRAW (Buffer* FICTIVE, Buffer* bufW);
 void handleDMP  (Buffer* FICTIVE, Buffer* bufW);
 void handleRET  (Buffer* FICTIVE, Buffer* bufW);
+
+void handleJMP  (Buffer* bufR, Buffer* bufW);
+void handleJNZ  (Buffer* bufR, Buffer* bufW);
+void handleJZ   (Buffer* bufR, Buffer* bufW);
+void handleJL   (Buffer* bufR, Buffer* bufW);
+void handleJLE  (Buffer* bufR, Buffer* bufW);
+void handleJG   (Buffer* bufR, Buffer* bufW);
+void handleJGE  (Buffer* bufR, Buffer* bufW);
+void handleCALL (Buffer* bufR, Buffer* bufW);
+
+void labelDecl  (const char* str, Buffer* bufW);
+
+
+void jmpWLdump ();
+size_t remUnmngldJMP ();
 
 
 #endif

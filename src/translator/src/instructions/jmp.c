@@ -1,4 +1,11 @@
-#include "jmp.h"
+#include "instructions.h"
+
+
+typedef struct __attribute__((packed))
+{
+    opcode_t opcode;
+    offset_t offset;
+}JMPopcode;
 
 
 typedef struct
@@ -14,6 +21,9 @@ typedef struct
     pointer_t ptr;
 }Request;
 
+#define JMPPOINTNAME_SIZ 16
+#define JMPTABLE_SIZ 256
+
 static struct
 {
     size_t labelsTotal;
@@ -27,7 +37,7 @@ static struct
     .requests    = {},
 };
 
-Erracc_t jmpWLdump ()
+void jmpWLdump ()
 {
     log_string ("<blu><b>jmp waiting list dump:</b><dft>\n");
 
@@ -40,12 +50,10 @@ Erracc_t jmpWLdump ()
         log_string ("  %lu: <grn>%0X<dft> <cyn>0x%p<dft>\n", Unmangled.requests[i].labelhash, Unmangled.requests[i].opcode, Unmangled.labels[i].ptr);
     
     log_string ("}\n");
-
-    return ErrAcc;
 }
 
 
-Erracc_t labelDecl (const char* str, Buffer* bufW)
+void labelDecl (const char* str, Buffer* bufW)
 {
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     assertStrict (str, "received NULL");
@@ -56,7 +64,7 @@ Erracc_t labelDecl (const char* str, Buffer* bufW)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_INTERNALERROR);
         log_err ("internal error", "sscanf cant find jmptag");
-        return ErrAcc;
+        return;
     }
     hash_t hash = djb2Hash (jmptag, sizeof (jmptag));
 
@@ -76,12 +84,7 @@ Erracc_t labelDecl (const char* str, Buffer* bufW)
                 .offset = (offset_t)(absPtr - Unmangled.requests[i].ptr - 1),
             };
 
-            if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
-            {
-                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
-                log_err ("buffer error", "cant write into buffer");
-                return ErrAcc;
-            }
+            bufWrite (bufW, &opcode, sizeof (JMPopcode));
 
             log_string
             (
@@ -97,13 +100,13 @@ Erracc_t labelDecl (const char* str, Buffer* bufW)
             bufW->bufpos = bufWpos;
 
             Unmangled.requests[i].labelhash          = 0;
-            Unmangled.requests[i].opcode        = 0;
-            Unmangled.requests[i].ptr = 0;
+            Unmangled.requests[i].opcode             = 0;
+            Unmangled.requests[i].ptr                = 0;
             Unmangled.reqTotal--;
         }
     }
 
-    Unmangled.labels[Unmangled.labelsTotal].hash    = hash;
+    Unmangled.labels[Unmangled.labelsTotal].hash = hash;
     Unmangled.labels[Unmangled.labelsTotal].ptr  = absPtr;
     Unmangled.labelsTotal++;
 
@@ -112,11 +115,9 @@ Erracc_t labelDecl (const char* str, Buffer* bufW)
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFOVERFLOW);
         log_err ("buffer overflow", "cant write jmptag into buffer");
     }
-    
-    return ErrAcc;
 }
 
-Erracc_t JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
+void JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
@@ -139,7 +140,7 @@ Erracc_t JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
             "syntax error",
             "no jmp tag found"
         );
-        return ErrAcc;
+        return;
     }
 
     hash_t hash = djb2Hash (jmptag, sizeof (jmptag));
@@ -148,11 +149,7 @@ Erracc_t JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
         if (Unmangled.labels[i].hash == hash)
         {
             jmpopcode.offset = (offset_t)(Unmangled.labels[i].ptr - (pointer_t)(bufW->bufpos - bufW->buffer) - 1);
-            if (bufWrite (bufW, &jmpopcode, sizeof (JMPopcode)) == 0)
-            {
-                ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
-                log_err ("buffer error", "cant write into buffer");
-            }
+            bufWrite (bufW, &jmpopcode, sizeof (JMPopcode));
 
             log_string
             (
@@ -165,7 +162,7 @@ Erracc_t JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
                 jmpopcode.offset
             );
             
-            return ErrAcc;
+            return;
         }
     }
 
@@ -175,8 +172,8 @@ Erracc_t JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
         if (Unmangled.requests[i].labelhash == 0 && Unmangled.requests[i].ptr == 0 && Unmangled.requests[i].opcode == 0)
         {
             Unmangled.requests[i].labelhash   = hash;
-            Unmangled.requests[i].opcode = opcode;
-            Unmangled.requests[i].ptr = (pointer_t)(bufW->bufpos - bufW->buffer);
+            Unmangled.requests[i].opcode      = opcode;
+            Unmangled.requests[i].ptr         = (pointer_t)(bufW->bufpos - bufW->buffer);
             Unmangled.reqTotal++;
             overflow = false;
             break;
@@ -187,16 +184,10 @@ Erracc_t JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFOVERFLOW);
         log_err ("buffer overflow", "cant write jmptag into buffer");
-        return ErrAcc;
+        return;
     }
 
-    if (bufWrite (bufW, &opcode, sizeof (JMPopcode)) == 0)
-    {
-        ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_BUFERR);
-        log_err ("buffer error", "cant write into buffer");
-    }
-
-    return ErrAcc;
+    bufWrite (bufW, &opcode, sizeof (JMPopcode));
 }
 
 #define JMPPATTERN(opcode) \
