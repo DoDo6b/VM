@@ -12,7 +12,7 @@ int main (int argc, char** argv)
     if (argc < 3)
     {
         log_err ("call error", "no input file, usage: %s *input file* *output file*", argv[0]);
-        exit (EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 
@@ -20,7 +20,7 @@ int main (int argc, char** argv)
     if (ErrAcc)
     {
         log_err ("translation error", "translation has ended with code: %llu", ErrAcc);
-        exit (EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
 

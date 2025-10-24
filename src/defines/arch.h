@@ -16,9 +16,7 @@ typedef struct
 }Header;
 
 
-#define VALUEPREFIX    '#'
 #define VALUEFORMAT    "%lld"
-#define REGISTERPREFIX '%'
 #define REGISTERFORMAT "%s"
 
 
@@ -61,7 +59,7 @@ enum OP_codes
 #define INSTRUCTIONBUF 8
 typedef char        instruction_t[INSTRUCTIONBUF];
 typedef uint8_t     opcode_t;
-
+#define NULLOPC     UINT8_MAX
 
 enum Registers
 {

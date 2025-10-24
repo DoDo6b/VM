@@ -69,7 +69,7 @@ static opcode_t regSearch (const char* str)
     hash_t hash = djb2Hash (str, sizeof (instruction_t));
     RegDescr_s key = {
         .hash = hash,
-        .opcode = UINT8_MAX,
+        .opcode = NULLOPC,
         .str = NULL,
     };
 
@@ -84,7 +84,7 @@ static opcode_t regSearch (const char* str)
         str,
         hash
     );
-    return UINT8_MAX;
+    return NULLOPC;
 }
 
 opcode_t getReg (Buffer* bufR)
@@ -107,7 +107,7 @@ opcode_t getReg (Buffer* bufR)
 
     opcode_t reg = regSearch (str);
 
-    if (reg == UINT8_MAX)
+    if (reg == NULLOPC)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
         log_srcerr
@@ -129,7 +129,7 @@ void tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset)
     assertStrict (reg,    "received NULL");
     assertStrict (offset, "received NULL");
 
-    *reg    = UINT8_MAX;
+    *reg    = NULLOPC;
     *offset = INT64_MIN;
 
     char str[32] = {0};
@@ -183,7 +183,7 @@ void tokBrackets (Buffer* bufR, opcode_t* reg, offset_t* offset)
         {
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
             log_err ("syntax error", "you cant use RBP with offset");
-            *reg = UINT8_MAX;
+            *reg = NULLOPC;
             return;
         }
     }
@@ -210,12 +210,12 @@ void encodeBrackets (Buffer* bufR, Buffer* bufW, bool modshift)
     }
 
     offset_t offset = INT64_MIN;
-    opcode_t reg    = UINT8_MAX;
+    opcode_t reg    = NULLOPC;
     tokBrackets (bufR, &reg, &offset);
 
     if (ErrAcc) return;
 
-    if (reg == UINT8_MAX)
+    if (reg == NULLOPC)
     {
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_UNKERR);
         log_err ("unknown error", "something went wrong");

@@ -39,6 +39,7 @@ static int instrHashCmp (const void* a, const void* b)
     return 0;
 }
 
+
 #define INSTR_DESCR(instr, argc, i)\
     Instructions[i].str = #instr;\
     Instructions[i].hash = djb2Hash (#instr, sizeof (#instr));\
@@ -116,8 +117,6 @@ static void parseSpecial (const char* instr, Buffer* bufR, Buffer* bufW)
     );
 }
 
-
-
 static size_t parse (Buffer* bufR, Buffer* bufW)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
@@ -140,7 +139,7 @@ static size_t parse (Buffer* bufR, Buffer* bufW)
         Instruction_s key = {
             .hash = hash,
             .str = NULL,
-            .opcode = UINT8_MAX,
+            .opcode = NULLOPC,
             .argReq = 0,
             .handler = NULL,
         };
