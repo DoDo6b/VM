@@ -13,8 +13,8 @@ TARGETS = translate vm agen
 
 COMMON_SRCS = $(shell find src/included src/defines -name '*.c')
 
-TRANSLATE_SRCS = $(shell find src/translator -name '*.c')
-VM_SRCS = $(shell find src/vm -name '*.c')
+TRANSLATE_SRCS = $(shell find src/translator src/structures -name '*.c')
+VM_SRCS = $(shell find src/vm src/structures -name '*.c')
 AGEN_SRCS = $(shell find src/animagen -name '*.c')
 
 TRANSLATE_OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(TRANSLATE_SRCS) $(COMMON_SRCS))
@@ -24,7 +24,7 @@ AGEN_OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(AGEN_SRCS) $(COMMON_SRCS))
 all: $(TARGETS)
 
 translate: $(TRANSLATE_OBJS)
-	@$(CC) $(CFLAGS) -o $@ $(TRANSLATE_OBJS)
+	@$(CC) $(CFLAGS) -DTARGET_TRNSLT -o $@ $(TRANSLATE_OBJS)
 
 vm: $(VM_OBJS)
 	@$(CC) $(CFLAGS) -o $@ $(VM_OBJS)

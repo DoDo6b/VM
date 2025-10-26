@@ -1,5 +1,6 @@
 #include "vm.h"
 #include "operations/operations.h"
+#include "../../structures/descriptions.h"
 
 #include "../run.h"
 
@@ -36,7 +37,7 @@ static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
             return ErrAcc;
         }
 
-        operations[(unsigned char)*vm->codeseg.rip].exec (vm);
+        Descriptions[(unsigned char)*vm->codeseg.rip].exec (vm);
         
         if (ErrAcc)
         {

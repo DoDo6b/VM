@@ -19,66 +19,6 @@ static FILE* fileOpen (const char* fname, const char* attributes)
 }
 
 
-typedef struct
-{
-    hash_t hash;
-    const char* str;
-    opcode_t opcode;
-    unsigned char argReq;
-    void (*handler)(Buffer*, Buffer*);
-}Instruction_s;
-static Instruction_s Instructions[NUM_OPS] = {};
-
-static int instrHashCmp (const void* a, const void* b)
-{
-    const Instruction_s* instrA = (const Instruction_s*)a;
-    const Instruction_s* instrB = (const Instruction_s*)b;
-
-    if (instrA->hash < instrB->hash) return -1;
-    if (instrA->hash > instrB->hash) return 1;
-    return 0;
-}
-
-
-#define INSTR_DESCR(instr, argc, i)\
-    Instructions[i].str = #instr;\
-    Instructions[i].hash = djb2Hash (#instr, sizeof (#instr));\
-    Instructions[i].opcode = OPC_ ## instr;\
-    Instructions[i].argReq = argc;\
-    Instructions[i].handler = handle ## instr;
-
-void instrinit ()
-{
-    reginit ();
-
-    INSTR_DESCR (HALT, 0, 0)
-    INSTR_DESCR (IN,   0, 1)
-    INSTR_DESCR (OUT,  0, 2)
-    INSTR_DESCR (POP,  0, 3)
-    INSTR_DESCR (PUSH, 1, 4)
-    INSTR_DESCR (MOV,  1, 5)
-    INSTR_DESCR (RET,  0, 6)
-    INSTR_DESCR (CMP,  0, 7)
-    INSTR_DESCR (ADD,  0, 8)
-    INSTR_DESCR (SUB,  0, 9)
-    INSTR_DESCR (MUL,  0, 10)
-    INSTR_DESCR (DIV,  0, 11)
-    INSTR_DESCR (DMP,  0, 12)
-    INSTR_DESCR (DRAW, 0, 13)
-
-    INSTR_DESCR (JMP,  1, 14)
-    INSTR_DESCR (JNZ,  1, 15)
-    INSTR_DESCR (JZ,   1, 16)
-    INSTR_DESCR (JL,   1, 17)
-    INSTR_DESCR (JLE,  1, 18)
-    INSTR_DESCR (JG,   1, 19)
-    INSTR_DESCR (JGE,  1, 20)
-    INSTR_DESCR (CALL, 1, 21)
-
-    qsort (Instructions, NUM_OPS, sizeof (Instruction_s), instrHashCmp);
-}
-
-
 static bool sSpaceLines (Buffer* buf)
 {
     assertStrict (bufVerify (buf, 0) == 0 && buf->mode == BUFREAD,  "bufR failed verification");
@@ -122,7 +62,8 @@ static size_t parse (Buffer* bufR, Buffer* bufW)
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     
-    instrinit ();
+    reginit ();
+    descriptionsInit ();
     size_t instrc = 0;
     instruction_t instruction = {0};
 
@@ -136,17 +77,9 @@ static size_t parse (Buffer* bufR, Buffer* bufW)
         }
 
         hash_t hash = djb2Hash (instruction, sizeof (instruction));
-        Instruction_s key = {
-            .hash = hash,
-            .str = NULL,
-            .opcode = NULLOPC,
-            .argReq = 0,
-            .handler = NULL,
-        };
 
-
-        const Instruction_s* instructionDescr = (const Instruction_s*)bsearch (&key, Instructions, NUM_OPS, sizeof (Instruction_s), instrHashCmp);
-        if (instructionDescr) instructionDescr->handler (bufR, bufW);
+        const iDescription_s* instructionDescr = descriptionSearch (hash);
+        if (instructionDescr) instructionDescr->encode (bufR, bufW);
         else parseSpecial (instruction, bufR, bufW);
 
 

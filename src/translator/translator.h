@@ -13,10 +13,11 @@
 #include "src/translatorcodes.h"
 #include "src/instructions/instructions.h"
 
+#include "../structures/descriptions.h"
+
 
 #define BUFFERSIZE BUFSIZ
 
-void instrinit ();
 
 Erracc_t translate (const char* input, const char* output);
 
