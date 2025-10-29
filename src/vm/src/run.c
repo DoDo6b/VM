@@ -7,6 +7,8 @@
 
 static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
 {
+    descriptionsInit ();
+
     VM* vm = VMInit (bcname, stackSiz, ramSiz);
     if (!vm)
     {
@@ -36,9 +38,12 @@ static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
             VMFree (vm);
             return ErrAcc;
         }
+        #ifdef TRACE
+        log_string ("executing: %02zX -> %p\n", (unsigned char)*vm->codeseg.rip, Descriptions[(unsigned char)*vm->codeseg.rip].exec);
+        #endif
 
         Descriptions[(unsigned char)*vm->codeseg.rip].exec (vm);
-        
+
         if (ErrAcc)
         {
             log_err ("runtime error", "aborting");

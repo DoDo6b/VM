@@ -3,9 +3,9 @@
 
 typedef struct
 {
+    opcode_t opcode;
     hash_t hash;
     const char* str;
-    opcode_t opcode;
 }RegDescr_s;
 
 static RegDescr_s Regs[NUM_REGS] = {};
@@ -68,8 +68,8 @@ static opcode_t regSearch (const char* str)
 
     hash_t hash = djb2Hash (str, sizeof (instruction_t));
     RegDescr_s key = {
-        .hash = hash,
         .opcode = NULLOPC,
+        .hash = hash,
         .str = NULL,
     };
 

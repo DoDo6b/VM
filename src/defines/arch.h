@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+//#define TRACE
+
 #define RTASM_SIGN  0X45A2833
 #define RTASM_VER   0XA031543
 

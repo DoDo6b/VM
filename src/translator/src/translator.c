@@ -79,8 +79,22 @@ static size_t parse (Buffer* bufR, Buffer* bufW)
         hash_t hash = djb2Hash (instruction, sizeof (instruction));
 
         const iDescription_s* instructionDescr = descriptionSearch (hash);
-        if (instructionDescr) instructionDescr->encode (bufR, bufW);
-        else parseSpecial (instruction, bufR, bufW);
+        if (instructionDescr) 
+        {
+            instructionDescr->encode (bufR, bufW);
+
+            #ifdef TRACE
+            log_string ("encoded: %s -> %02zX\n", instructionDescr->str, instructionDescr->opcode);
+            #endif
+        }
+        else
+        {
+            parseSpecial (instruction, bufR, bufW);
+
+            #ifdef TRACE
+            log_string ("parsed: \"%s\"\n", instruction);
+            #endif
+        }
 
 
         instrc++;

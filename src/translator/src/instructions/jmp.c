@@ -86,17 +86,6 @@ void labelDecl (const char* str, Buffer* bufW)
 
             bufWrite (bufW, &opcode, sizeof (JMPopcode));
 
-            log_string
-            (
-                "has wrote: JMP\n"
-                "{\n"
-                "opcode: %0X\n"
-                "offset: %lld\n"
-                "}\n",
-                opcode.opcode,
-                opcode.offset
-            );
-
             bufW->bufpos = bufWpos;
 
             Unmangled.requests[i].labelhash          = 0;
@@ -117,7 +106,7 @@ void labelDecl (const char* str, Buffer* bufW)
     }
 }
 
-void JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
+static void JMPfixup (Buffer* bufR, Buffer* bufW, opcode_t opcode)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
@@ -150,18 +139,6 @@ void JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
         {
             jmpopcode.offset = (offset_t)(Unmangled.labels[i].ptr - (pointer_t)(bufW->bufpos - bufW->buffer) - 1);
             bufWrite (bufW, &jmpopcode, sizeof (JMPopcode));
-
-            log_string
-            (
-                "  has wrote: JMP\n"
-                "  {\n"
-                "  opcode: %0X\n"
-                "  offset: %lld\n"
-                "  }\n",
-                jmpopcode.opcode,
-                jmpopcode.offset
-            );
-            
             return;
         }
     }
@@ -193,7 +170,7 @@ void JMPLikeMangle (Buffer* bufR, Buffer* bufW, opcode_t opcode)
 #define JMPPATTERN(opcode) \
 void handle ## opcode (Buffer* bufR, Buffer* bufW)\
 {\
-    JMPLikeMangle (bufR, bufW, OPC_ ## opcode);\
+    JMPfixup (bufR, bufW, OPC_ ## opcode);\
 }
 
 JMPPATTERN (JMP)

@@ -1,43 +1,56 @@
 CC = g++
-CFLAGS = -DNDEBUG -o3 -g -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual \
-         -Wchar-subscripts -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal -Wformat-nonliteral -Wformat-security \
-         -Wformat-signedness -Wformat=2 -Winline -Wnon-virtual-dtor -Woverloaded-virtual -Wpacked -Wpointer-arith -Winit-self \
-         -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-overflow=2 -Wsuggest-override -Wswitch-default \
-         -Wswitch-enum -Wundef -Wunreachable-code -Wunused -Wvariadic-macros -Wno-missing-field-initializers -Wno-narrowing \
-         -Wno-old-style-cast -Wno-varargs -Wstack-protector -fcheck-new -fsized-deallocation -fstack-protector -fstrict-overflow \
-         -fno-omit-frame-pointer -Wlarger-than=8192 -fPIE -Werror=vla -Wno-deprecated
+CFLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equal -Winline -Wunreachable-code\
+         -Wmissing-declarations -Wmissing-include-dirs -Wswitch-enum -Wswitch-default -Weffc++ -Wmain -Wextra -Wall -g -pipe\
+         -fexceptions -Wcast-qual -Wconversion -Wctor-dtor-privacy -Wempty-body -Wformat-security -Wformat=2 -Wignored-qualifiers\
+         -Wlogical-op -Wno-missing-field-initializers -Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wsign-promo\
+         -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel -Wtype-limits -Wwrite-strings -Werror=vla\
+         -D_EJUDGE_CLIENT_SIDE -DNDEBUG -o3
 
-BUILD_DIR = src/build
+BUILD_DIR = src\build
 
-TARGETS = translate vm agen
+TRANSLATE_TARGET = translate.exe
+VM_TARGET = vm.exe
+ANIMGEN_TARGET = agen.exe
 
-COMMON_SRCS = $(shell find src/included src/defines -name '*.c')
+COMMON_SRCS = $(shell for /r src\included %%i in (*.c) do @echo %%i) \
+              $(shell for /r src\defines %%i in (*.c) do @echo %%i)
 
-TRANSLATE_SRCS = $(shell find src/translator src/structures -name '*.c')
-VM_SRCS = $(shell find src/vm src/structures -name '*.c')
-AGEN_SRCS = $(shell find src/animagen -name '*.c')
+TRANSLATE_SRCS = $(shell for /r src\translator %%i in (*.c) do @echo %%i) \
+				 $(shell for /r src\structures %%i in (*.c) do @echo %%i)
 
-TRANSLATE_OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(TRANSLATE_SRCS) $(COMMON_SRCS))
-VM_OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(VM_SRCS) $(COMMON_SRCS))
-AGEN_OBJS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(AGEN_SRCS) $(COMMON_SRCS))
+VM_SRCS        = $(shell for /r src\vm %%i in (*.c) do @echo %%i) \
+				 $(shell for /r src\structures %%i in (*.c) do @echo %%i)
 
-all: $(TARGETS)
+ANIMGEN_SRCS   = $(shell for /r src\framegen %%i in (*.c) do @echo %%i)
 
-translate: $(TRANSLATE_OBJS)
-	@$(CC) $(CFLAGS) -DTARGET_TRNSLT -o $@ $(TRANSLATE_OBJS)
+TRANSLATE_OBJS = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(TRANSLATE_SRCS:src/%.c=$(BUILD_DIR)/%.o)
+VM_OBJS        = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(VM_SRCS:src/%.c=$(BUILD_DIR)/%.o)
+ANIMGEN_OBJS   = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(ANIMGEN_SRCS:src/%.c=$(BUILD_DIR)/%.o)
 
-vm: $(VM_OBJS)
-	@$(CC) $(CFLAGS) -o $@ $(VM_OBJS)
+all: $(TRANSLATE_TARGET) $(VM_TARGET) $(ANIMGEN_TARGET)
 
-agen: $(AGEN_OBJS)
-	@$(CC) $(CFLAGS) -o $@ $(AGEN_OBJS)
+$(TRANSLATE_TARGET): $(TRANSLATE_OBJS)
+	$(CC) $(CFLAGS) -DTARGET_TRNSLT -o $@ $(TRANSLATE_OBJS)
+
+$(VM_TARGET): $(VM_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(VM_OBJS)
+
+$(ANIMGEN_TARGET): $(ANIMGEN_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(ANIMGEN_OBJS)
 
 $(BUILD_DIR)/%.o: src/%.c
-	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@if not exist $(@D) mkdir $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+translate: $(TRANSLATE_TARGET)
+vm: $(VM_TARGET)
+agen: $(ANIMGEN_TARGET)
 
 clean:
-	@rm -rf $(BUILD_DIR) $(TARGETS)
+	if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)
+	if exist $(TRANSLATE_TARGET) del $(TRANSLATE_TARGET)
+	if exist $(VM_TARGET) del $(VM_TARGET)
+	if exist $(ANIMGEN_TARGET) del $(ANIMGEN_TARGET)
 
 rebuild: clean all
 
