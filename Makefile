@@ -21,7 +21,7 @@ TRANSLATE_SRCS = $(shell for /r src\translator %%i in (*.c) do @echo %%i) \
 VM_SRCS        = $(shell for /r src\vm %%i in (*.c) do @echo %%i) \
 				 $(shell for /r src\structures %%i in (*.c) do @echo %%i)
 
-ANIMGEN_SRCS   = $(shell for /r src\framegen %%i in (*.c) do @echo %%i)
+ANIMGEN_SRCS   = $(shell for /r src\animagen %%i in (*.c) do @echo %%i)
 
 TRANSLATE_OBJS = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(TRANSLATE_SRCS:src/%.c=$(BUILD_DIR)/%.o)
 VM_OBJS        = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(VM_SRCS:src/%.c=$(BUILD_DIR)/%.o)
@@ -34,7 +34,7 @@ $(VM_TARGET): $(VM_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(VM_OBJS)
 
 $(ANIMGEN_TARGET): $(ANIMGEN_OBJS)
-	$(CC) $(CFLAGS) -o $@ $(ANIMGEN_OBJS)
+	$(CC) $(CFLAGS) -e main -mconsole -o $@ $(ANIMGEN_OBJS)
 
 $(BUILD_DIR)/%.o: src/%.c
 	@if not exist $(@D) mkdir $(@D)
