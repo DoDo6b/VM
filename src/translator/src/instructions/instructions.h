@@ -11,47 +11,38 @@
 #include "../../../defines/arch.h"
 #include "../translatorcodes.h"
 #include "operands/operands.h"
-#include "jmp.h"
 
 
-enum InstructionHash    // these hashes could be calculated with gethash.exe from kutils
-{
-    HALT_HASH = 6385287662,
+void handlePUSH (Buffer* bufR, Buffer* bufW);
+void handleMOV  (Buffer* bufR, Buffer* bufW);
 
-    IN_HASH    = 5863484,
+void handleHALT (Buffer* FICTIVE, Buffer* bufW);
+void handleIN   (Buffer* FICTIVE, Buffer* bufW);
+void handleOUT  (Buffer* FICTIVE, Buffer* bufW);
+void handlePOP  (Buffer* FICTIVE, Buffer* bufW);
+void handleCMP  (Buffer* FICTIVE, Buffer* bufW);
+void handleADD  (Buffer* FICTIVE, Buffer* bufW);
+void handleSUB  (Buffer* FICTIVE, Buffer* bufW);
+void handleMUL  (Buffer* FICTIVE, Buffer* bufW);
+void handleDIV  (Buffer* FICTIVE, Buffer* bufW);
+void handleDRAW (Buffer* FICTIVE, Buffer* bufW);
+void handleDMP  (Buffer* FICTIVE, Buffer* bufW);
+void handleRET  (Buffer* FICTIVE, Buffer* bufW);
 
-    OUT_HASH   = 193501853,
-    POP_HASH   = 193466804,
-    PUSH_HASH  = 6385597157,
+void handleJMP  (Buffer* bufR, Buffer* bufW);
+void handleJNZ  (Buffer* bufR, Buffer* bufW);
+void handleJZ   (Buffer* bufR, Buffer* bufW);
+void handleJL   (Buffer* bufR, Buffer* bufW);
+void handleJLE  (Buffer* bufR, Buffer* bufW);
+void handleJG   (Buffer* bufR, Buffer* bufW);
+void handleJGE  (Buffer* bufR, Buffer* bufW);
+void handleCALL (Buffer* bufR, Buffer* bufW);
 
-    MOV_HASH   = 193499479,
-
-    JMP_HASH   = 193496140,
-    JNZ_HASH   = 193496183,
-    JZ_HASH    = 5863529,
-    JL_HASH    = 5863515,
-    JLE_HASH   = 193496096,
-    JGE_HASH   = 193495931,
-    JG_HASH    = 5863510,
-
-    CALL_HASH  = 6385107969,
-    RET_HASH   = 193504592,
-
-    CMP_HASH  = 193488517,
-
-    ADD_HASH   = 193486030,
-    SUB_HASH   = 193506191,
-    MUL_HASH   = 193499667,
-    DIV_HASH   = 193489480,
-
-    DMP_HASH   = 193489606,
-    DRAW_HASH  = 6385162067,
-};
+void labelDecl  (const char* str, Buffer* bufW);
 
 
-Erracc_t writeOPcode (Buffer* bufW, opcode_t opcode);
-Erracc_t writePush   (Buffer* bufW, Buffer* bufR, size_t instrc);
-Erracc_t writeMov    (Buffer* bufW, Buffer* bufR, size_t instrc);
+void jmpWLdump ();
+size_t remUnmngldJMP ();
 
 
 #endif

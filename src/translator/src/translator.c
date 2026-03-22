@@ -18,6 +18,7 @@ static FILE* fileOpen (const char* fname, const char* attributes)
     return stream;
 }
 
+
 static bool sSpaceLines (Buffer* buf)
 {
     assertStrict (bufVerify (buf, 0) == 0 && buf->mode == BUFREAD,  "bufR failed verification");
@@ -30,39 +31,42 @@ static bool sSpaceLines (Buffer* buf)
 }
 
 
-static Erracc_t decomposeSpecial (const char* instr, Buffer* bufR, Buffer* bufW, size_t instrc)
+static void parseSpecial (const char* instr, Buffer* bufR, Buffer* bufW)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
     assertStrict (instr, "received NULL");
 
-    instruction_t nothing = {0};
+    instruction_t nothing = {};
     char key = 0;
-    if (sscanf (instr, "%[^:]%c", nothing, &key) && key == ':') return decomposeChpoint (instr, bufW);
+    if (sscanf (instr, "%[^:]%c", nothing, &key) && key == ':') 
+    {
+        labelDecl (instr, bufW);
+        return;
+    }
 
     ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
     log_srcerr
     (
         bufR->name ? bufR->name : "*fname*",
-        instrc + 1,
+        bufTellL (bufR) + 1,
         "syntax error",
         "unknown instruction (instr: %s hash: %lu)",
         instr,
         djb2Hash (instr, sizeof (instruction_t))
     );
-    return ErrAcc;
 }
 
-
-#define CASE_SIMPLEINSTRUCTION(opcode)  case opcode ## _HASH: writeOPcode (bufW, opcode); break;
-
-static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
+static size_t parse (Buffer* bufR, Buffer* bufW)
 {
     assertStrict (bufVerify (bufR, 0) == 0 && bufR->mode == BUFREAD,  "bufR failed verification");
     assertStrict (bufVerify (bufW, 0) == 0 && bufW->mode == BUFWRITE, "bufW failed verification");
-    assertStrict (instrc, "received NULL");
     
+    reginit ();
+    descriptionsInit ();
+    size_t instrc = 0;
     instruction_t instruction = {0};
+
 
     while (sSpaceLines (bufR) && bufScanf (bufR, "%s", instruction) > 0)
     {
@@ -74,51 +78,35 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
 
         hash_t hash = djb2Hash (instruction, sizeof (instruction));
 
-        switch (hash)
+        const iDescription_s* instructionDescr = descriptionSearch (hash);
+        if (instructionDescr) 
         {
-            CASE_SIMPLEINSTRUCTION (HALT)
-            CASE_SIMPLEINSTRUCTION (IN)
-            CASE_SIMPLEINSTRUCTION (OUT)
-            CASE_SIMPLEINSTRUCTION (POP)
-            CASE_SIMPLEINSTRUCTION (CMP)
-            CASE_SIMPLEINSTRUCTION (ADD)
-            CASE_SIMPLEINSTRUCTION (SUB)
-            CASE_SIMPLEINSTRUCTION (MUL)
-            CASE_SIMPLEINSTRUCTION (DIV)
-            CASE_SIMPLEINSTRUCTION (DRAW)
-            CASE_SIMPLEINSTRUCTION (DMP)
-            CASE_SIMPLEINSTRUCTION (RET)
+            instructionDescr->encode (bufR, bufW);
 
-            case MOV_HASH:  writeMov  (bufW, bufR, *instrc); break;
-
-            case JMP_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_NOCOND); break;
-            case JNZ_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_NZERO);  break;
-            case JZ_HASH:   decomposeJMP (bufR, bufW, *instrc, JMP_ZERO);   break;
-            case JL_HASH:   decomposeJMP (bufR, bufW, *instrc, JMP_LESS);   break;
-            case JLE_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_LEQ);    break;
-            case JG_HASH:   decomposeJMP (bufR, bufW, *instrc, JMP_GRTR);   break;
-            case JGE_HASH:  decomposeJMP (bufR, bufW, *instrc, JMP_GEQ);    break;
-            
-            case CALL_HASH: decomposeJMP (bufR, bufW, *instrc, JMP_CALL);   break;
-
-            case PUSH_HASH: writePush (bufW, bufR, *instrc); break;
-            
-            default:  decomposeSpecial (instruction, bufR, bufW, *instrc);
+            #ifdef TRACE
+            log_string ("encoded: %s -> %02zX\n", instructionDescr->str, instructionDescr->opcode);
+            #endif
         }
-        *instrc += 1;
+        else
+        {
+            parseSpecial (instruction, bufR, bufW);
 
+            #ifdef TRACE
+            log_string ("parsed: \"%s\"\n", instruction);
+            #endif
+        }
+
+
+        instrc++;
 
         bufSSpaces (bufR);
         if (bufpeekc (bufR) != '\0' && bufpeekc (bufR) != ';')
         {
             ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-
-            bufDump (bufR);
-
             log_srcerr
             (
                 bufR->name,
-                *instrc + 1,
+                bufTellL (bufR) + 1,
                 "syntax error",
                 "multiple instructions in line"
             );
@@ -126,24 +114,28 @@ static Erracc_t decompose (Buffer* bufR, Buffer* bufW, size_t* instrc)
         
         if (ErrAcc)
         {
-            log_err ("runtime error", "aborting");
-            return ErrAcc;
+            log_srcerr
+            (
+                bufR->name,
+                bufTellL (bufR) + 1,
+                "runtime error",
+                "aborting"
+            );
+            return 0;
         }
     }
 
-    if (remainingUnprocJMPReq () != 0)
+
+    if (remUnmngldJMP () != 0)
     {
         jmpWLdump ();
         ErrAcc |= TRNSLT_ERRCODE (TRNSLTR_SYNTAX);
-        log_err ("syntax error", "missing jmptags");
-        return ErrAcc;
+        log_err ("syntax error", "there are still unrelated jmp");
+        return 0;
     }
 
-
-    return ErrAcc;
+    return instrc;
 }
-
-#undef CASE_SIMPLEINSTRUCTION
 
 
 
@@ -175,28 +167,29 @@ Erracc_t translate (const char* input, const char* output)
     bufSetStream (bufW, output, bin,     BUFWRITE);
 
     bufRead (bufR, 0);
-    bufLSplit (bufR);
+    fclose (listing);
 
+    bufLSplit (bufR);
     fseek (bin, sizeof (Header), SEEK_SET);
 
     Header header = {
         .sign =    RTASM_SIGN,
         .version = RTASM_VER,
-        .instrc = 0,
+        .instrc =  0,
     };
 
 
-    decompose (bufR, bufW, &header.instrc);
+    header.instrc = parse (bufR, bufW);
 
 
     log_string ("<grn>translated %llu opcode(s)<dft>\n", header.instrc);
 
     bufFree (bufW);
     bufFree (bufR);
+
     fseek  (bin, 0, SEEK_SET);
     fwrite (&header, sizeof (Header), 1, bin);
-    
-    fclose (listing);
+
     fclose (bin);
 
     return ErrAcc;

@@ -13,6 +13,8 @@
 #include "src/translatorcodes.h"
 #include "src/instructions/instructions.h"
 
+#include "../structures/descriptions.h"
+
 
 #define BUFFERSIZE BUFSIZ
 

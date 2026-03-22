@@ -1,11 +1,14 @@
 #include "vm.h"
 #include "operations/operations.h"
+#include "../../structures/descriptions.h"
 
 #include "../run.h"
 
 
 static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
 {
+    descriptionsInit ();
+
     VM* vm = VMInit (bcname, stackSiz, ramSiz);
     if (!vm)
     {
@@ -19,7 +22,7 @@ static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
     {
         instrc++;
 
-        if (*vm->codeseg.rip == HALT) break;
+        if (*vm->codeseg.rip == OPC_HALT) break;
 
         if ((unsigned char)*vm->codeseg.rip > NUM_OPS)
         {
@@ -35,9 +38,12 @@ static Erracc_t runThread (const char* bcname, size_t stackSiz, size_t ramSiz)
             VMFree (vm);
             return ErrAcc;
         }
+        #ifdef TRACE
+        log_string ("executing: %02zX -> %p\n", (unsigned char)*vm->codeseg.rip, Descriptions[(unsigned char)*vm->codeseg.rip].exec);
+        #endif
 
-        operations[(unsigned char)*vm->codeseg.rip].exec (vm);
-        
+        Descriptions[(unsigned char)*vm->codeseg.rip].exec (vm);
+
         if (ErrAcc)
         {
             log_err ("runtime error", "aborting");

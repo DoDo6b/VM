@@ -1,9 +1,9 @@
 #include "../included/logger/logger.h"
 #include "run.h"
 
-#define LOGFILE "log.html"
+#define LOGFILE "stdout"
 #define STACKSIZE 2048
-#define RAMSIZE 11844
+#define RAMSIZE 16384
 
 
 int main (int argc, char** argv)

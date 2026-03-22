@@ -1,7 +1,7 @@
 #include "../operations.h"
 
 #define ARITHMETIC_OP(sign, name, condition)\
-    void op_ ## name (VM* vm)\
+    void op ## name (VM* vm)\
     {\
         assertStrict (VMVerify (vm) == 0, "vm corrupted");\
         \
@@ -46,7 +46,7 @@ ARITHMETIC_OP (/, DIV,
 #undef ARITHMETIC_OP
 
 
-void op_CMP (VM* vm)
+void opCMP (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 

@@ -2,7 +2,7 @@
 
 #define MODSRCMASK  ((mod >> 3) & 0x07)
 
-void op_IN (VM* vm)
+void opIN (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -16,7 +16,7 @@ void op_IN (VM* vm)
 }
 
 
-void op_PUSH (VM* vm)
+void opPUSH (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -127,7 +127,7 @@ void op_PUSH (VM* vm)
     return;
 }
 
-void op_OUT (VM* vm)
+void opOUT (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -139,7 +139,7 @@ void op_OUT (VM* vm)
     vm->codeseg.rip += sizeof (opcode_t);
 }
 
-void op_POP (VM* vm)
+void opPOP (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 

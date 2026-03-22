@@ -1,7 +1,7 @@
 #include "../operations.h"
 
 
-void op_JMP (VM* vm)
+void opJMP (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -26,21 +26,21 @@ void op_JMP (VM* vm)
 #define VMZF  ((vm->rflags >> 6) & 1ULL)
 #define VMCF  ( vm->rflags       & 1ULL)
 
-#define COND_JMP(name, condition) \
-    void op_ ## name (VM* vm)\
+#define CONDJMP(name, condition) \
+    void op ## name (VM* vm)\
     {\
         assertStrict (VMVerify (vm) == 0, "vm corrupted");\
         \
-        if (condition) op_JMP (vm);\
+        if (condition) opJMP (vm);\
         else vm->codeseg.rip += sizeof (offset_t) + sizeof (opcode_t);\
         return;\
     }
 
-COND_JMP (JNZ, !VMZF)
-COND_JMP (JZ,   VMZF)
-COND_JMP (JL,  !VMZF &&  VMCF)
-COND_JMP (JG,  !VMZF && !VMCF)
-COND_JMP (JLE,  VMZF ||  VMCF)
-COND_JMP (JGE,  VMZF || !VMCF)
+CONDJMP (JNZ, !VMZF)
+CONDJMP (JZ,   VMZF)
+CONDJMP (JL,  !VMZF &&  VMCF)
+CONDJMP (JG,  !VMZF && !VMCF)
+CONDJMP (JLE,  VMZF ||  VMCF)
+CONDJMP (JGE,  VMZF || !VMCF)
 
 #undef COND_JMP

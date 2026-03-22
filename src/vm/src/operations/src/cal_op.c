@@ -1,7 +1,7 @@
 #include "../operations.h"
 
 
-void op_CALL (VM* vm)
+void opCALL (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
@@ -16,10 +16,10 @@ void op_CALL (VM* vm)
     
     stackPush (vm->callstack, &retaddr);
 
-    return op_JMP (vm);
+    return opJMP (vm);
 }
 
-void op_RET (VM* vm)
+void opRET (VM* vm)
 {
     assertStrict (VMVerify (vm) == 0, "vm corrupted");
 
