@@ -27,8 +27,6 @@ TRANSLATE_OBJS = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(TRANSLATE_SRCS:src/%.
 VM_OBJS        = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(VM_SRCS:src/%.c=$(BUILD_DIR)/%.o)
 ANIMGEN_OBJS   = $(COMMON_SRCS:src/%.c=$(BUILD_DIR)/%.o) $(ANIMGEN_SRCS:src/%.c=$(BUILD_DIR)/%.o)
 
-all: $(TRANSLATE_TARGET) $(VM_TARGET) $(ANIMGEN_TARGET)
-
 $(TRANSLATE_TARGET): $(TRANSLATE_OBJS)
 	$(CC) $(CFLAGS) -DTARGET_TRNSLT -o $@ $(TRANSLATE_OBJS)
 
@@ -45,6 +43,8 @@ $(BUILD_DIR)/%.o: src/%.c
 translate: $(TRANSLATE_TARGET)
 vm: $(VM_TARGET)
 agen: $(ANIMGEN_TARGET)
+
+all: translate vm
 
 clean:
 	if exist $(BUILD_DIR) rmdir /s /q $(BUILD_DIR)
